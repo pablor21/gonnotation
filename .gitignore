@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.log
+bin/
+obj/
+.private
+*.md
+!README.md
+*.backup
+*.tmp
