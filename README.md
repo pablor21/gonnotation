@@ -5,15 +5,15 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pablor21/gonnotation)](https://goreportcard.com/report/github.com/pablor21/gonnotation)
 
 A **truly generic** Go annotation parser library that enables code generation for any output format through a powerful plugin system. 
-Extract annotations, types, and metadata from Go source code to generate [GraphQL](https://github.com/pablor21/gqlschemagen) schemas, [OpenAPI](https://github.com/pablor21/oasgen) specs, [protobuf](https://github.com/pablor21/protogen) definitions, or any custom format.
+Extract annotations, types, and metadata from Go source code to generate [GraphQL](https://github.com/pablor21/gqlschemagen) schemas, [OpenAPI](https://github.com/pablor21/oaschemagen) specs, [protobuf](https://github.com/pablor21/protoschemagen) definitions, or any custom format.
 
 > THIS LIBRARY IS NOT A CODE GENERATOR ITSELF. IT PROVIDES THE CORE PARSING AND PLUGIN INFRASTRUCTURE TO BUILD YOUR OWN CODE GENERATORS.
 
 ## Examples of code generators built with gonnotation:
 
 - [gqlschemagen](https://github.com/pablor21/gqlschemagen)
-- [oasgen](https://github.com/pablor21/oasgen)
-- [protogen](https://github.com/pablor21/protogen)
+- [oasgen](https://github.com/pablor21/oaschemagen)
+- [protoschemagen](https://github.com/pablor21/protoschemagen)
 
 ## ✨ Features
 
