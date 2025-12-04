@@ -1,6 +1,10 @@
 package parser
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/pablor21/gonnotation/annotations"
+)
 
 // FileTypeMapping tracks which types are defined in which generated files
 type FileTypeMapping struct {
@@ -30,6 +34,10 @@ type GenerationContext struct {
 	// File mapping for multi-file generation
 	FileTypeMappings []*FileTypeMapping // Track which types are in which files
 
+	// Package and file-level annotations
+	PackageAnnotations map[string][]annotations.Annotation // Package path -> annotations
+	FileAnnotations    map[string][]annotations.Annotation // File path -> annotations
+
 	// Shared utilities
 	TypeResolver     *TypeResolver
 	GenericProcessor *GenericProcessor
@@ -51,6 +59,8 @@ func NewGenerationContext(parser *Parser, structs []*StructInfo, enums []*EnumIn
 		PluginConfig:       pluginConfig,
 		AutoGenerateConfig: autoGenConfig,
 		Logger:             NewDefaultLogger(),
+		PackageAnnotations: make(map[string][]annotations.Annotation),
+		FileAnnotations:    make(map[string][]annotations.Annotation),
 	}
 
 	ctx.TypeResolver = NewTypeResolver(parser)
@@ -77,6 +87,8 @@ func NewGenerationContextWithInterfaces(parser *Parser, structs []*StructInfo, i
 		PluginConfig:       pluginConfig,
 		AutoGenerateConfig: autoGenConfig,
 		Logger:             NewDefaultLogger(),
+		PackageAnnotations: make(map[string][]annotations.Annotation),
+		FileAnnotations:    make(map[string][]annotations.Annotation),
 	}
 
 	ctx.TypeResolver = NewTypeResolver(parser)

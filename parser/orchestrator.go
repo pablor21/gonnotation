@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pablor21/gonnotation/annotations"
 )
 
 // Orchestrator coordinates the parsing and generation process
@@ -313,6 +315,9 @@ func (o *Orchestrator) Generate(spec string, pluginConfig any) ([]byte, error) {
 
 	ctx := NewGenerationContextWithInterfaces(o.parser, filteredStructs, filteredInterfaces, filteredEnums, filteredFunctions, allStructs, allInterfaces, allEnums, allFunctions, o.config, pluginConfig, autoGenConfig, emptyTypes)
 
+	// Extract package and file-level annotations
+	o.extractPackageAndFileAnnotations(ctx)
+
 	// Generate - plugin only formats the schema, no filtering inside
 	return plugin.Generate(ctx)
 }
@@ -402,6 +407,9 @@ func (o *Orchestrator) GenerateMulti(spec string, pluginConfig any) (*GeneratedO
 
 	// Create generation context
 	ctx := NewGenerationContextWithInterfaces(o.parser, filteredStructs, filteredInterfaces, filteredEnums, filteredFunctions, allStructs, allInterfaces, allEnums, allFunctions, o.config, pluginConfig, autoGenConfig, emptyTypes)
+
+	// Extract package and file-level annotations
+	o.extractPackageAndFileAnnotations(ctx)
 
 	// Generate using multi-file strategy
 	return plugin.GenerateMulti(ctx)
@@ -1622,4 +1630,45 @@ func (o *Orchestrator) findExternalPackageForType(typeName string) string {
 	}
 
 	return ""
+}
+
+// extractPackageAndFileAnnotations extracts package-level and file-level annotations
+// and populates the PackageAnnotations and FileAnnotations maps in the context
+func (o *Orchestrator) extractPackageAndFileAnnotations(ctx *GenerationContext) {
+	if ctx == nil || ctx.Parser == nil {
+		return
+	}
+
+	files := ctx.Parser.GetFiles()
+	packages := ctx.Parser.GetPackages()
+
+	// Extract file-level annotations from package doc comments
+	for filePath, file := range files {
+		if file.Doc != nil {
+			// Parse annotations from the package comment group (file-level)
+			fileAnnotations := annotations.ParseAnnotations([]*ast.CommentGroup{file.Doc})
+			if len(fileAnnotations) > 0 {
+				ctx.FileAnnotations[filePath] = fileAnnotations
+			}
+		}
+	}
+
+	// Extract package-level annotations
+	// For package-level annotations, we look at the first file in each package
+	// that has package doc comments
+	for packagePath, packageFiles := range packages {
+		for _, file := range packageFiles {
+			if file.Doc != nil {
+				// Parse annotations from the package comment group
+				packageAnnotations := annotations.ParseAnnotations([]*ast.CommentGroup{file.Doc})
+				if len(packageAnnotations) > 0 {
+					// Merge with existing package annotations if any
+					existing := ctx.PackageAnnotations[packagePath]
+					ctx.PackageAnnotations[packagePath] = append(existing, packageAnnotations...)
+					// Only process the first file with package doc for each package
+					break
+				}
+			}
+		}
+	}
 }
