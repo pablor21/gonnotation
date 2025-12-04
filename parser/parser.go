@@ -1257,6 +1257,62 @@ func (p *Parser) GetFile(filePath string) *ast.File {
 	return p.files[filePath]
 }
 
+// ExtractFileAnnotations extracts file-level and package-level annotations
+func (p *Parser) ExtractFileAnnotations() (map[string][]annotations.Annotation, map[string][]annotations.Annotation) {
+	fileAnnotations := make(map[string][]annotations.Annotation)
+	packageAnnotations := make(map[string][]annotations.Annotation)
+
+	for fileName, file := range p.files {
+		var allFileComments []*ast.CommentGroup
+
+		// Collect file-level comments that appear before the package declaration
+		if file.Package != token.NoPos && len(file.Comments) > 0 {
+			packagePos := p.fset.Position(file.Package).Line
+			for _, commentGroup := range file.Comments {
+				commentPos := p.fset.Position(commentGroup.Pos()).Line
+				// Comments before package declaration are file-level
+				if commentPos < packagePos {
+					allFileComments = append(allFileComments, commentGroup)
+				} else {
+					// Comments after package but not attached to declarations are also file-level
+					// Check if this comment is not attached to any declaration
+					isAttached := false
+					for _, decl := range file.Decls {
+						if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Doc == commentGroup {
+							isAttached = true
+							break
+						}
+						if funcDecl, ok := decl.(*ast.FuncDecl); ok && funcDecl.Doc == commentGroup {
+							isAttached = true
+							break
+						}
+					}
+					if !isAttached {
+						allFileComments = append(allFileComments, commentGroup)
+					}
+				}
+			}
+		}
+
+		// Parse annotations from file-level comments
+		if len(allFileComments) > 0 {
+			fileAnns := annotations.ParseAnnotations(allFileComments)
+			if len(fileAnns) > 0 {
+				fileAnnotations[fileName] = fileAnns
+
+				// Also add to package annotations for the package
+				pkgPath := p.packagePaths[file.Name.Name]
+				if pkgPath == "" {
+					pkgPath = file.Name.Name
+				}
+				packageAnnotations[pkgPath] = append(packageAnnotations[pkgPath], fileAnns...)
+			}
+		}
+	}
+
+	return fileAnnotations, packageAnnotations
+}
+
 // GetFiles returns all parsed files
 func (p *Parser) GetFiles() map[string]*ast.File {
 	return p.files

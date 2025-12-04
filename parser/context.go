@@ -67,6 +67,13 @@ func NewGenerationContext(parser *Parser, structs []*StructInfo, enums []*EnumIn
 	ctx.GenericProcessor = NewGenericProcessor(ctx.TypeResolver)
 	// Note: Field processing and naming strategies are format-specific and should be handled by plugins
 
+	// Extract file-level and package-level annotations
+	if parser != nil {
+		fileAnns, pkgAnns := parser.ExtractFileAnnotations()
+		ctx.FileAnnotations = fileAnns
+		ctx.PackageAnnotations = pkgAnns
+	}
+
 	return ctx
 }
 
@@ -94,6 +101,13 @@ func NewGenerationContextWithInterfaces(parser *Parser, structs []*StructInfo, i
 	ctx.TypeResolver = NewTypeResolver(parser)
 	ctx.GenericProcessor = NewGenericProcessor(ctx.TypeResolver)
 	// Note: Field processing and naming strategies are format-specific and should be handled by plugins
+
+	// Extract file-level and package-level annotations
+	if parser != nil {
+		fileAnns, pkgAnns := parser.ExtractFileAnnotations()
+		ctx.FileAnnotations = fileAnns
+		ctx.PackageAnnotations = pkgAnns
+	}
 
 	return ctx
 }
