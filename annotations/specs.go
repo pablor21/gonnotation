@@ -4,8 +4,8 @@ import "strings"
 
 // PluginDefinitions contains annotation and struct tag specifications for a plugin
 type PluginDefinitions struct {
-	Annotations []AnnotationSpec
-	StructTags  []TagParam
+	Annotations []AnnotationSpec `json:"annotations"`
+	StructTags  []TagParam       `json:"structTags"`
 }
 
 // GetAnnotationSpecByName finds an annotation specification by name or alias

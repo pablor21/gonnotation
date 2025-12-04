@@ -49,9 +49,13 @@ func (mfg *MultiFormatGenerator) Generate() error {
 				// The file path is already resolved by the generator
 				outputPath := file.Path
 
-				// If path is not absolute, it's relative to current directory
+				// If path is not absolute, resolve it relative to the config directory
 				if !filepath.IsAbs(outputPath) {
-					outputPath = filepath.Clean(outputPath)
+					if mfg.config.ConfigDir != "" {
+						outputPath = filepath.Join(mfg.config.ConfigDir, outputPath)
+					} else {
+						outputPath = filepath.Clean(outputPath)
+					}
 				}
 
 				// Ensure directory exists

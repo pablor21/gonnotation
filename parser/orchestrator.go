@@ -283,10 +283,14 @@ func (o *Orchestrator) Generate(spec string, pluginConfig any) ([]byte, error) {
 	// Create context with utilities - pass both filtered and all structs/interfaces/enums/functions plus merged config
 	// Final hard enforcement: drop any items whose SourceFile is outside the config directory when only a single local package ("./" or ".") was specified.
 	// This guards against accidental over-inclusion from previous parsing passes.
+	fmt.Printf("[DEBUG ENFORCE] len(packages)=%d, packages=%v, configDir=%s\n", len(o.config.Packages), o.config.Packages, o.config.ConfigDir)
 	if len(o.config.Packages) == 1 {
 		p := o.config.Packages[0]
+		fmt.Printf("[DEBUG ENFORCE] single package: '%s', checking if it matches './' or '.'\n", p)
 		if p == "./" || p == "." {
+			fmt.Printf("[DEBUG ENFORCE] TRIGGERING enforcement for package '%s'\n", p)
 			baseDir := filepath.Clean(o.config.ConfigDir)
+			fmt.Printf("[DEBUG ENFORCE] baseDir=%s, allStructs before enforcement=%d\n", baseDir, len(allStructs))
 			filteredStructs = o.enforceConfigDirStructs(filteredStructs, baseDir)
 			filteredInterfaces = o.enforceConfigDirInterfaces(filteredInterfaces, baseDir)
 			filteredEnums = o.enforceConfigDirEnums(filteredEnums, baseDir)
@@ -296,6 +300,9 @@ func (o *Orchestrator) Generate(spec string, pluginConfig any) ([]byte, error) {
 			allInterfaces = o.enforceConfigDirInterfaces(allInterfaces, baseDir)
 			allEnums = o.enforceConfigDirEnums(allEnums, baseDir)
 			allFunctions = o.enforceConfigDirFunctions(allFunctions, baseDir)
+			fmt.Printf("[DEBUG ENFORCE] allStructs after enforcement=%d\n", len(allStructs))
+		} else {
+			fmt.Printf("[DEBUG ENFORCE] NOT triggering enforcement for package '%s'\n", p)
 		}
 	}
 
@@ -340,21 +347,6 @@ func (o *Orchestrator) GenerateMulti(spec string, pluginConfig any) (*GeneratedO
 		return nil, fmt.Errorf("parse error: %w", err)
 	}
 
-	// Prepare boundary roots
-	boundaryRoots := make([]string, 0, len(resolvedPaths))
-	seenRoot := make(map[string]struct{})
-	for _, rp := range resolvedPaths {
-		base := deriveBoundaryRoot(rp)
-		if base == "" {
-			base = rp
-		}
-		base = filepath.Clean(base)
-		if _, ok := seenRoot[base]; !ok {
-			boundaryRoots = append(boundaryRoots, base)
-			seenRoot[base] = struct{}{}
-		}
-	}
-
 	// Extract structs, interfaces and enums from initially parsed packages
 	allStructs := o.parser.ExtractStructs()
 	allInterfaces := o.parser.ExtractInterfaces()
@@ -376,11 +368,18 @@ func (o *Orchestrator) GenerateMulti(spec string, pluginConfig any) (*GeneratedO
 	}
 
 	// Filter by boundary roots
-	if len(boundaryRoots) > 0 {
-		allStructs = o.filterByRootDirsStructs(allStructs, boundaryRoots)
-		allEnums = o.filterByRootDirsEnums(allEnums, boundaryRoots)
-		allInterfaces = o.filterByRootDirsInterfaces(allInterfaces, boundaryRoots)
-	}
+	// DISABLED: This filtering is too aggressive and filters out valid structs when using patterns like "./**"
+	// The package parsing already respects the package patterns, so additional boundary filtering is not needed
+	// if len(boundaryRoots) > 0 {
+	// 	fmt.Printf("[DEBUG BOUNDARY] Before filterByRootDirsStructs: %d structs\n", len(allStructs))
+	// 	for i, s := range allStructs {
+	// 		fmt.Printf("  [%d] %s SourceFile='%s'\n", i, s.Name, s.SourceFile)
+	// 	}
+	// 	allStructs = o.filterByRootDirsStructs(allStructs, boundaryRoots)
+	// 	fmt.Printf("[DEBUG BOUNDARY] After filterByRootDirsStructs: %d structs\n", len(allStructs))
+	// 	allEnums = o.filterByRootDirsEnums(allEnums, boundaryRoots)
+	// 	allInterfaces = o.filterByRootDirsInterfaces(allInterfaces, boundaryRoots)
+	// }
 
 	// Extract functions
 	scanOptions := o.getMergedScanOptions(pluginConfig)
@@ -663,7 +662,6 @@ func (o *Orchestrator) filterFunctions(functions []*FunctionInfo, plugin Plugin)
 
 // filterStructsForPlugin filters structs based on plugin annotations AND auto-generation rules
 func (o *Orchestrator) filterStructsForPlugin(allStructs []*StructInfo, allEnums []*EnumInfo, plugin Plugin, autoGenConfig *AutoGenerateConfig) ([]*StructInfo, error) {
-	// fmt.Printf("[DEBUG FILTER PLUGIN] autoGenConfig=%v, enabled=%v\n", autoGenConfig != nil, autoGenConfig != nil && autoGenConfig.Enabled)
 	o.logger.Debug(fmt.Sprintf("filterStructsForPlugin: autoGenConfig=%v, enabled=%v", autoGenConfig != nil, autoGenConfig != nil && autoGenConfig.Enabled))
 
 	// If auto-generation is disabled, only return annotated structs
@@ -676,7 +674,7 @@ func (o *Orchestrator) filterStructsForPlugin(allStructs []*StructInfo, allEnums
 	// fmt.Printf("[DEBUG FILTER PLUGIN] Using ApplyAutoGeneration\n")
 	o.logger.Debug("Using ApplyAutoGeneration")
 	// Apply auto-generation with format generator annotation checker
-	return ApplyAutoGeneration(
+	result, err := ApplyAutoGeneration(
 		allStructs,
 		allEnums,
 		autoGenConfig,
@@ -691,6 +689,7 @@ func (o *Orchestrator) filterStructsForPlugin(allStructs []*StructInfo, allEnums
 		},
 		o.logger, // Pass logger for autogen messages
 	)
+	return result, err
 }
 
 // getMergedAutoGenerateConfig merges root-level and plugin-level auto-generate configs

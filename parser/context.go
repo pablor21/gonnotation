@@ -1,5 +1,15 @@
 package parser
 
+import "strings"
+
+// FileTypeMapping tracks which types are defined in which generated files
+type FileTypeMapping struct {
+	FileName string          // Generated file name
+	Structs  map[string]bool // Set of struct names in this file
+	Enums    map[string]bool // Set of enum names in this file
+	Services map[string]bool // Set of service names in this file
+}
+
 // GenerationContext provides data and utilities for format generators
 type GenerationContext struct {
 	Structs            []*StructInfo    // Filtered structs (annotated for this format generator)
@@ -16,6 +26,9 @@ type GenerationContext struct {
 	PluginConfig       any
 	AutoGenerateConfig *AutoGenerateConfig // Merged root + format generator auto-generate config
 	Logger             Logger              // Logger for generation messages
+
+	// File mapping for multi-file generation
+	FileTypeMappings []*FileTypeMapping // Track which types are in which files
 
 	// Shared utilities
 	TypeResolver     *TypeResolver
@@ -97,4 +110,57 @@ func (ctx *GenerationContext) InferImplementedInterfaceNames(s *StructInfo) []st
 	// Interface inference is now plugin-specific responsibility
 	// This method is kept for backward compatibility but plugins should implement their own logic
 	return nil
+}
+
+// AddFileTypeMapping adds a file type mapping to track which types are in which files
+func (ctx *GenerationContext) AddFileTypeMapping(fileName string) *FileTypeMapping {
+	mapping := &FileTypeMapping{
+		FileName: fileName,
+		Structs:  make(map[string]bool),
+		Enums:    make(map[string]bool),
+		Services: make(map[string]bool),
+	}
+	ctx.FileTypeMappings = append(ctx.FileTypeMappings, mapping)
+	return mapping
+}
+
+// GetFileTypeMapping gets the mapping for a specific file
+func (ctx *GenerationContext) GetFileTypeMapping(fileName string) *FileTypeMapping {
+	for _, mapping := range ctx.FileTypeMappings {
+		if mapping.FileName == fileName {
+			return mapping
+		}
+	}
+	return nil
+}
+
+// FindTypeFile finds which file contains a specific type
+func (ctx *GenerationContext) FindTypeFile(typeName string) string {
+	for _, mapping := range ctx.FileTypeMappings {
+		if mapping.Structs[typeName] || mapping.Enums[typeName] || mapping.Services[typeName] {
+			return mapping.FileName
+		}
+	}
+	return ""
+}
+
+// GetRequiredImports returns the list of files that need to be imported for types used in the given file
+func (ctx *GenerationContext) GetRequiredImports(currentFile string, usedTypes []string) []string {
+	var imports []string
+	importSet := make(map[string]bool)
+
+	for _, typeName := range usedTypes {
+		typeFile := ctx.FindTypeFile(typeName)
+		if typeFile != "" && typeFile != currentFile && !importSet[typeFile] {
+			// Extract just the filename without directory path for proto imports
+			fileName := typeFile
+			if idx := strings.LastIndex(typeFile, "/"); idx != -1 {
+				fileName = typeFile[idx+1:]
+			}
+			imports = append(imports, fileName)
+			importSet[fileName] = true
+		}
+	}
+
+	return imports
 }
