@@ -379,6 +379,7 @@ func (p *Parser) ExtractStructs() []*StructInfo {
 					PackagePath:    pkgPath,
 					SourceFile:     fileName,
 					Namespace:      namespace,
+					Comment:        extractCommentText([]*ast.CommentGroup{typeSpec.Doc, genDecl.Doc}),
 					Annotations:    annotations,
 					IsGeneric:      typeSpec.TypeParams != nil && typeSpec.TypeParams.NumFields() > 0,
 					IsExternalType: isExternalType, // Mark if from external file
@@ -644,6 +645,7 @@ func (p *Parser) ExtractEnums() []*EnumInfo {
 							PackagePath:    pkgPath,
 							SourceFile:     fileName,
 							Namespace:      namespace,
+							Comment:        extractCommentText([]*ast.CommentGroup{typeSpec.Doc, genDecl.Doc}),
 							Annotations:    annotations,
 							Values:         []*EnumValue{},
 							IsExternalType: isExternalType, // Mark if from external file
@@ -708,6 +710,7 @@ func (p *Parser) ExtractInterfaces() []*InterfaceInfo {
 					PackagePath:    pkgPath,
 					SourceFile:     fileName,
 					Namespace:      namespace,
+					Comment:        extractCommentText([]*ast.CommentGroup{typeSpec.Doc, genDecl.Doc}),
 					Annotations:    annotations,
 					IsExternalType: isExternalType, // Mark if from external file
 				}
@@ -755,6 +758,40 @@ func collectFieldComments(field *ast.Field) []*ast.CommentGroup {
 		comments = append(comments, field.Comment)
 	}
 	return comments
+}
+
+// extractCommentText extracts plain text from comment groups, removing comment markers
+func extractCommentText(commentGroups []*ast.CommentGroup) string {
+	if len(commentGroups) == 0 {
+		return ""
+	}
+
+	var parts []string
+	for _, group := range commentGroups {
+		if group == nil {
+			continue
+		}
+		for _, comment := range group.List {
+			text := comment.Text
+			// Remove comment markers
+			if strings.HasPrefix(text, "//") {
+				text = strings.TrimPrefix(text, "//")
+			} else if strings.HasPrefix(text, "/*") && strings.HasSuffix(text, "*/") {
+				text = strings.TrimPrefix(text, "/*")
+				text = strings.TrimSuffix(text, "*/")
+			}
+			text = strings.TrimSpace(text)
+			if text != "" {
+				parts = append(parts, text)
+			}
+		}
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return strings.Join(parts, " ")
 }
 
 // extractEnumValues extracts const values for an enum type
@@ -826,6 +863,7 @@ func (p *Parser) extractEnumValues(enumInfo *EnumInfo) []*EnumValue {
 							Name:        name.Name,
 							Value:       value,
 							Description: description,
+							Comment:     extractCommentText(comments),
 							Annotations: annotations,
 						}
 						values = append(values, ev)
@@ -956,6 +994,7 @@ func (p *Parser) extractFields(structType *ast.StructType, file *ast.File) []*Fi
 					Type:        field.Type,
 					Tag:         field.Tag,
 					IsEmbedded:  false,
+					Comment:     extractCommentText(collectFieldComments(field)),
 					Annotations: annotations,
 				}
 				fields = append(fields, fi)
@@ -968,6 +1007,7 @@ func (p *Parser) extractFields(structType *ast.StructType, file *ast.File) []*Fi
 				Type:        field.Type,
 				Tag:         field.Tag,
 				IsEmbedded:  true,
+				Comment:     extractCommentText(collectFieldComments(field)),
 				Annotations: annotations,
 			}
 			fields = append(fields, fi)

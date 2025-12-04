@@ -15,6 +15,7 @@ type StructInfo struct {
 	PackagePath string
 	SourceFile  string
 	Namespace   string // Namespace from @namespace annotation (file-level or type-level)
+	Comment     string // Extracted doc comment
 	Fields      []*FieldInfo
 	Annotations []annotations.Annotation
 	IsGeneric   bool
@@ -36,6 +37,7 @@ type FieldInfo struct {
 	Type        ast.Expr
 	Tag         *ast.BasicLit
 	IsEmbedded  bool
+	Comment     string // Extracted doc comment
 	Annotations []annotations.Annotation
 }
 
@@ -47,6 +49,7 @@ type EnumInfo struct {
 	PackagePath    string
 	SourceFile     string
 	Namespace      string // Namespace from @namespace annotation (file-level or type-level)
+	Comment        string // Extracted doc comment
 	Values         []*EnumValue
 	Annotations    []annotations.Annotation
 	IsExternalType bool // If this enum was loaded from an external package
@@ -57,6 +60,7 @@ type EnumValue struct {
 	Name        string
 	Value       any
 	Description string
+	Comment     string // Extracted doc comment
 	Annotations []annotations.Annotation
 }
 
@@ -68,6 +72,7 @@ type InterfaceInfo struct {
 	Package        string
 	PackagePath    string
 	SourceFile     string
+	Comment        string // Extracted doc comment
 	Namespace      string // Namespace from @namespace annotation (file-level or type-level)
 	Methods        []*MethodInfo
 	Annotations    []annotations.Annotation
