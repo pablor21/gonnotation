@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"strings"
-
 	"github.com/pablor21/gonnotation/annotations"
 )
 
@@ -178,13 +176,8 @@ func (ctx *GenerationContext) GetRequiredImports(currentFile string, usedTypes [
 	for _, typeName := range usedTypes {
 		typeFile := ctx.FindTypeFile(typeName)
 		if typeFile != "" && typeFile != currentFile && !importSet[typeFile] {
-			// Extract just the filename without directory path for proto imports
-			fileName := typeFile
-			if idx := strings.LastIndex(typeFile, "/"); idx != -1 {
-				fileName = typeFile[idx+1:]
-			}
-			imports = append(imports, fileName)
-			importSet[fileName] = true
+			imports = append(imports, typeFile)
+			importSet[typeFile] = true
 		}
 	}
 
