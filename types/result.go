@@ -3,6 +3,7 @@ package types
 import (
 	"go/ast"
 	"go/token"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 
 type ProcessResult struct {
 	Elements map[string]*TypeInfo // keyed by CannonicalName
+	context  *ProcessContext      `json:"-"` // Internal context for processing
 }
 
 func NewParseResult() *ProcessResult {
@@ -24,13 +26,15 @@ func NewParseResult() *ProcessResult {
 
 func (pr *ProcessResult) ParsePackage(ctx *ProcessContext, pkg *packages.Package) error {
 	// Initialize the Types cache if not already done
-	if ctx.Types == nil {
-		ctx.Types = make(map[string]*TypeInfo)
+	if ctx.types == nil {
+		ctx.types = make(map[string]*TypeInfo)
 	}
 	// Initialize the ConstsByType cache if not already done
-	if ctx.ConstsByType == nil {
-		ctx.ConstsByType = make(map[string][]EnumValue)
+	if ctx.constsByType == nil {
+		ctx.constsByType = make(map[string][]EnumValue)
 	}
+
+	pr.context = ctx
 
 	// Check if we're in referenced mode - if so, we need a two-pass approach
 	if pr.isReferencedMode(ctx) {
@@ -72,7 +76,7 @@ func (pr *ProcessResult) parsePackageNormalMode(ctx *ProcessContext, pkg *packag
 	pr.detectEnums(ctx)
 
 	// Now copy the final Types from the cache to the result (after enum detection)
-	for canonicalName, typeInfo := range ctx.Types {
+	for canonicalName, typeInfo := range ctx.types {
 		pr.Elements[canonicalName] = typeInfo
 	}
 
@@ -190,7 +194,7 @@ func (pr *ProcessResult) parsePackageReferencedMode(ctx *ProcessContext, pkg *pa
 	pr.detectEnums(ctx)
 
 	// Now copy the final Types from the cache to the result (after enum detection)
-	for canonicalName, typeInfo := range ctx.Types {
+	for canonicalName, typeInfo := range ctx.types {
 		pr.Elements[canonicalName] = typeInfo
 	}
 
@@ -244,7 +248,7 @@ func (pr *ProcessResult) AddTypeSpec(ctx *ProcessContext, spec *ast.TypeSpec, ge
 	ti := NewTypeInfoFromExpr(spec.Type, spec.Name.Name, []*ast.CommentGroup{spec.Doc, genDecl.Doc}, genDecl, file, pkg, spec)
 	if ti != nil {
 		// Add to cache immediately (before parsing fields to handle self-references)
-		ctx.Types[ti.CannonicalName] = ti
+		ctx.types[ti.CannonicalName] = ti
 
 		// Now parse type parameters, alias target, generic instantiation, container types, and fields with the type already in cache
 		ti.parseTypeParams(ctx)
@@ -333,7 +337,7 @@ func (pr *ProcessResult) AddConstBlock(ctx *ProcessContext, genDecl *ast.GenDecl
 				}
 
 				// Add to the type's enum values
-				ctx.ConstsByType[currentTypeName] = append(ctx.ConstsByType[currentTypeName], enumValue)
+				ctx.constsByType[currentTypeName] = append(ctx.constsByType[currentTypeName], enumValue)
 
 				// Increment iota for next constant in sequence
 				iotaValue++
@@ -381,15 +385,15 @@ func (pr *ProcessResult) AddConstSpec(ctx *ProcessContext, spec *ast.ValueSpec, 
 			}
 
 			// Add to the type's enum values
-			ctx.ConstsByType[typeName] = append(ctx.ConstsByType[typeName], enumValue)
+			ctx.constsByType[typeName] = append(ctx.constsByType[typeName], enumValue)
 		}
 	}
 }
 
 // detectEnums converts types with associated constants into enums
 func (pr *ProcessResult) detectEnums(ctx *ProcessContext) {
-	for typeName, enumValues := range ctx.ConstsByType {
-		if typeInfo, exists := ctx.Types[typeName]; exists {
+	for typeName, enumValues := range ctx.constsByType {
+		if typeInfo, exists := ctx.types[typeName]; exists {
 			typeInfo.Kind = TypeKindEnum
 			typeInfo.EnumValues = enumValues
 		}
@@ -635,7 +639,7 @@ func (pr *ProcessResult) AddFuncDecl(ctx *ProcessContext, funcDecl *ast.FuncDecl
 	}
 
 	// Add to cache
-	ctx.Types[canonicalName] = ti
+	ctx.types[canonicalName] = ti
 }
 
 // shouldScanType determines if a type should be scanned based on ScanOptions
@@ -680,4 +684,195 @@ func (pr *ProcessResult) shouldScanEnums(ctx *ProcessContext) bool {
 
 	scanOptions := &ctx.Config.Scanning.ScanOptions
 	return scanOptions.Enums != config.ScanModeNone && scanOptions.Enums != config.ScanModeDisabled
+}
+
+// CalculateTypeDepths calculates the depth of all types from scanned packages
+func (pr *ProcessResult) CalculateTypeDepths() {
+	if pr == nil || pr.Elements == nil {
+		return
+	}
+
+	// First, update include types for all types that might not have been classified
+	pr.UpdateIncludeTypes()
+
+	queue := []string{}
+	visited := make(map[string]bool)
+
+	// Start with all scanned types at depth 0
+	for canonicalName, typeInfo := range pr.Elements {
+		if typeInfo.IncludeType == IncludeTypeScanned {
+			typeInfo.Depth = 0
+			queue = append(queue, canonicalName)
+			visited[canonicalName] = true
+		}
+	}
+
+	// BFS to calculate depths
+	for len(queue) > 0 {
+		currentName := queue[0]
+		queue = queue[1:]
+		currentType := pr.Elements[currentName]
+
+		if currentType == nil {
+			continue
+		}
+
+		// Find all types referenced by currentType
+		referencedTypes := findReferencedTypes(currentType)
+
+		for _, refName := range referencedTypes {
+			if refName == "" || visited[refName] {
+				continue
+			}
+
+			refType := pr.Elements[refName]
+			if refType != nil {
+				refType.Depth = currentType.Depth + 1
+				visited[refName] = true
+				queue = append(queue, refName)
+			}
+		}
+	}
+}
+
+// UpdateIncludeTypes updates the include type classification for all types
+func (pr *ProcessResult) UpdateIncludeTypes() {
+
+	for _, typeInfo := range pr.Elements {
+		if typeInfo.Package != nil {
+			typeInfo.IncludeType = pr.ClassifyIncludeType(typeInfo.Package.PkgPath)
+		}
+	}
+}
+
+// Include type and depth tracking functions
+
+// isInScannedPackages checks if a package path matches any of the scanned package patterns
+func isInScannedPackages(pkgPath string, patterns []string) bool {
+	if pkgPath == "" {
+		return false
+	}
+	for _, pattern := range patterns {
+		// Handle file patterns like "./models/*.go" by extracting the directory part
+		// and checking if the package name matches
+		if strings.HasSuffix(pattern, "*.go") {
+			// Extract directory from pattern (e.g., "./models/*.go" -> "models")
+			dir := filepath.Dir(pattern)
+			dir = strings.TrimPrefix(dir, "./")
+			dir = strings.TrimPrefix(dir, "/")
+
+			// Check if package path ends with the directory name
+			if strings.HasSuffix(pkgPath, "/"+dir) || strings.HasSuffix(pkgPath, dir) {
+				return true
+			}
+		} else {
+			// Direct package path matching
+			if strings.HasPrefix(pkgPath, pattern) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isSameModule checks if a package belongs to the same module
+func isSameModule(pkgPath, modulePath string) bool {
+	if pkgPath == "" || modulePath == "" {
+		return false
+	}
+	return strings.HasPrefix(pkgPath, modulePath)
+}
+
+// isStandardLibrary checks if a package is from Go's standard library
+func isStandardLibrary(pkgPath string) bool {
+	if pkgPath == "" {
+		return false
+	}
+	// Standard library packages don't contain dots or have specific known prefixes
+	return !strings.Contains(pkgPath, ".") ||
+		strings.HasPrefix(pkgPath, "golang.org/x/") ||
+		strings.HasPrefix(pkgPath, "std/")
+}
+
+// classifyIncludeType determines the include type for a package
+func (pr *ProcessResult) ClassifyIncludeType(pkgPath string) IncludeType {
+	if pr.context == nil || pr.context.Config == nil || pkgPath == "" {
+		return IncludeTypeExternal
+	}
+
+	if isInScannedPackages(pkgPath, pr.context.Config.Scanning.Packages) {
+		return IncludeTypeScanned
+	}
+
+	if isSameModule(pkgPath, pr.context.ModulePath) {
+		return IncludeTypeLocal
+	}
+
+	if isStandardLibrary(pkgPath) {
+		return IncludeTypeStd
+	}
+
+	return IncludeTypeExternal
+}
+
+// findReferencedTypes collects all type canonical names referenced by a type
+func findReferencedTypes(typeInfo *TypeInfo) []string {
+	var referenced []string
+
+	// Collect from fields
+	for _, field := range typeInfo.Fields {
+		if field.TypeInfo != nil {
+			referenced = append(referenced, field.TypeInfo.CannonicalName)
+		}
+	}
+
+	// Collect from method parameters and returns
+	for _, method := range typeInfo.Methods {
+		for _, param := range method.Parms {
+			if param.TypeInfo != nil {
+				referenced = append(referenced, param.TypeInfo.CannonicalName)
+			}
+		}
+		for _, ret := range method.Returns {
+			if ret.TypeInfo != nil {
+				referenced = append(referenced, ret.TypeInfo.CannonicalName)
+			}
+		}
+	}
+
+	// Collect from function signature (for function types)
+	if typeInfo.FunctionSig != nil {
+		for _, param := range typeInfo.FunctionSig.Parms {
+			if param.TypeInfo != nil {
+				referenced = append(referenced, param.TypeInfo.CannonicalName)
+			}
+		}
+		for _, ret := range typeInfo.FunctionSig.Returns {
+			if ret.TypeInfo != nil {
+				referenced = append(referenced, ret.TypeInfo.CannonicalName)
+			}
+		}
+	}
+
+	// Collect from container types
+	if typeInfo.ElementType != nil {
+		referenced = append(referenced, typeInfo.ElementType.CannonicalName)
+	}
+	if typeInfo.KeyType != nil {
+		referenced = append(referenced, typeInfo.KeyType.CannonicalName)
+	}
+
+	// Collect from generic type arguments
+	for _, arg := range typeInfo.TypeArguments {
+		if arg != nil {
+			referenced = append(referenced, arg.CannonicalName)
+		}
+	}
+
+	// Collect from alias target
+	if typeInfo.AliasTarget != nil {
+		referenced = append(referenced, typeInfo.AliasTarget.CannonicalName)
+	}
+
+	return referenced
 }

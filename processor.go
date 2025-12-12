@@ -61,20 +61,18 @@ func parsePackages(ctx *types.ProcessContext, packages []*packages.Package) (*ty
 	}
 
 	// Update usage flags for all types after parsing is complete
-	for _, typeInfo := range ctx.Types {
+	for _, typeInfo := range res.Elements {
 		types.UpdateUsageFlags(typeInfo)
 	}
 
 	// Update include types for all types after parsing is complete
-	types.UpdateIncludeTypes(ctx)
+	res.UpdateIncludeTypes()
 
 	// Calculate depths for all types after parsing and usage tracking is complete
-	types.CalculateTypeDepths(ctx)
+	res.CalculateTypeDepths()
 
 	// Update the result with the final processed types (after all modifications)
-	for canonicalName, typeInfo := range ctx.Types {
-		res.Elements[canonicalName] = typeInfo
-	}
+	// maps.Copy(res.Elements, res.Elements)
 
 	return res, nil
 }
@@ -94,11 +92,11 @@ func detectModulePath() string {
 		if _, err := os.Stat(goModPath); err == nil {
 			// Read go.mod file to extract module path
 			if content, err := os.ReadFile(goModPath); err == nil {
-				lines := strings.Split(string(content), "\n")
-				for _, line := range lines {
+				lines := strings.SplitSeq(string(content), "\n")
+				for line := range lines {
 					line = strings.TrimSpace(line)
-					if strings.HasPrefix(line, "module ") {
-						return strings.TrimSpace(strings.TrimPrefix(line, "module "))
+					if after, ok := strings.CutPrefix(line, "module "); ok {
+						return strings.TrimSpace(after)
 					}
 				}
 			}

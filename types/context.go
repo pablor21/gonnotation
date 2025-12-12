@@ -13,8 +13,8 @@ type ProcessContext struct {
 	Config *config.Config
 	//Generator Generator
 	Logger       logger.Logger
-	Types        map[string]*TypeInfo
-	ConstsByType map[string][]EnumValue // Map type name to its const values for enum detection
+	types        map[string]*TypeInfo
+	constsByType map[string][]EnumValue // Map type name to its const values for enum detection
 	ModulePath   string                 // The module path of the project being scanned
 }
 
@@ -30,15 +30,15 @@ func GetOrCreateTypeInfo(ctx *ProcessContext, expr ast.Expr, typeName string, co
 	}
 
 	// Initialize cache if needed
-	if ctx.Types == nil {
-		ctx.Types = make(map[string]*TypeInfo)
+	if ctx.types == nil {
+		ctx.types = make(map[string]*TypeInfo)
 	}
 
 	// Generate canonical name for caching
 	canonicalName := utils.GetCanonicalNameFromExpr(expr, typeName, pkg, file)
 
 	// Check cache first
-	if cached, exists := ctx.Types[canonicalName]; exists {
+	if cached, exists := ctx.types[canonicalName]; exists {
 		return cached
 	}
 
@@ -48,7 +48,7 @@ func GetOrCreateTypeInfo(ctx *ProcessContext, expr ast.Expr, typeName string, co
 		// Ensure the canonical name matches what we use for caching
 		ti.CannonicalName = canonicalName
 		// Use the canonical name we computed for lookup, not the one from TypeInfo
-		ctx.Types[canonicalName] = ti
+		ctx.types[canonicalName] = ti
 		// For struct types that are being created outside the main parsing loop,
 		// we should parse their fields immediately
 		if ti.Kind == TypeKindStruct && ti.structType != nil {

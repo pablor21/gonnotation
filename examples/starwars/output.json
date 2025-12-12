@@ -327,7 +327,7 @@
           ],
           "TypeRef": "string",
           "Tag": {
-            "ValuePos": 656826,
+            "ValuePos": 656463,
             "Kind": 9,
             "Value": "`json:\"name\" schema:\"name\"`"
           },
@@ -499,14 +499,6 @@
           "TypeRef": "github.gom/pablor21/gonnotation/examples/starwars/models.EnumString",
           "Comment": "",
           "Annotations": null
-        },
-        {
-          "Name": "enumStringPrivate",
-          "Visibility": "private",
-          "Value": "privateOption",
-          "TypeRef": "github.gom/pablor21/gonnotation/examples/starwars/models.EnumString",
-          "Comment": "",
-          "Annotations": null
         }
       ],
       "UsageInfo": {
@@ -581,7 +573,7 @@
           ],
           "TypeRef": "string",
           "Tag": {
-            "ValuePos": 657059,
+            "ValuePos": 656696,
             "Kind": 9,
             "Value": "`json:\"name\" schema:\"name\"`"
           },
@@ -610,7 +602,7 @@
           "Annotations": null,
           "TypeRef": "github.gom/pablor21/gonnotation/examples/starwars/models.anonymous",
           "Tag": {
-            "ValuePos": 657129,
+            "ValuePos": 656766,
             "Kind": 9,
             "Value": "`json:\"friends\" schema:\"friends\"`"
           },
@@ -1645,6 +1637,97 @@
       },
       "IncludeType": "scanned",
       "Depth": 0
+    },
+    "github.gom/pablor21/gonnotation/examples/starwars/other.OtherStruct": {
+      "Package": {
+        "ID": "github.gom/pablor21/gonnotation/examples/starwars/other",
+        "Name": "other",
+        "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/other",
+        "GoFiles": [
+          "/workspace/gonnotation/examples/starwars/other/test.go"
+        ]
+      },
+      "Kind": "struct",
+      "Visibility": "public",
+      "CannonicalName": "github.gom/pablor21/gonnotation/examples/starwars/other.OtherStruct",
+      "Name": "OtherStruct",
+      "PkgName": "other",
+      "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/other",
+      "Comment": "",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [
+        {
+          "Name": "Server",
+          "IsPointer": false,
+          "Comment": "",
+          "Annotations": null,
+          "TypeRef": "net/http.Server",
+          "Tag": null,
+          "IsEmbedded": false,
+          "Tags": null,
+          "Visibility": "public"
+        }
+      ],
+      "Methods": [],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
+    },
+    "net/http.Server": {
+      "Package": {
+        "ID": "net/http",
+        "Name": "http",
+        "PkgPath": "net/http"
+      },
+      "Kind": "struct",
+      "Visibility": "private",
+      "CannonicalName": "net/http.Server",
+      "Name": "Server",
+      "PkgName": "http",
+      "PkgPath": "net/http",
+      "Comment": "",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [],
+      "Methods": [],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/other.OtherStruct",
+            "Name": "Server",
+            "Kind": "field"
+          }
+        ]
+      },
+      "IncludeType": "std",
+      "Depth": 1
     },
     "time.Time": {
       "Package": {

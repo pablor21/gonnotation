@@ -10,7 +10,7 @@ import (
 
 func main() {
 	c := config.NewDefaultConfig()
-	c.Scanning.Packages = []string{"./models/*.go"}
+	c.Scanning.Packages = []string{"./models/*.go", "./other/*.go"}
 
 	res, err := gonnotation.ProcessWithConfig(c)
 	if err != nil {
