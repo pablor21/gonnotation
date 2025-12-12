@@ -25,13 +25,13 @@ type XNode Node[Character, int]
 
 type SimpleAlias = string
 
-// type Droid struct {
-// 	// Name of the droid character
-// 	// @field("name")
-// 	Name        string `json:"name" schema:"name"`
-// 	PrimaryFunc string
-// 	CreatedAt   *time.Time
-// // }
+type Droid struct {
+	// Name of the droid character
+	// @field("name")
+	Name        string `json:"name" schema:"name"`
+	PrimaryFunc string
+	CreatedAt   *time.Time
+}
 
 // Human represents a human character
 // @schema("Human")

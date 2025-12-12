@@ -2,6 +2,7 @@ package types
 
 import (
 	"go/ast"
+	"path/filepath"
 	"strings"
 
 	"github.com/pablor21/gonnotation/annotations"
@@ -35,6 +36,7 @@ const (
 type IncludeType string
 
 const (
+	IncludeTypeScanned  IncludeType = "scanned"
 	IncludeTypeLocal    IncludeType = "local"
 	IncludeTypeExternal IncludeType = "external"
 	IncludeTypeStd      IncludeType = "std"
@@ -46,7 +48,7 @@ type TypeInfo struct {
 	Visibility             Visibility
 	CannonicalName         string // PackagePath +  "." +  Name
 	Name                   string
-	File                   *ast.File     `json:"-"`
+	AstFile                *ast.File     `json:"-"`
 	TypeSpec               *ast.TypeSpec `json:"-"`
 	GenDecl                *ast.GenDecl  `json:"-"`
 	Expr                   ast.Expr      `json:"-"` // Original expression that created this type
@@ -143,7 +145,7 @@ func NewTypeInfoFromExpr(expr ast.Expr, typeName string, commentGroups []*ast.Co
 	// Create base TypeInfo
 	ti := &TypeInfo{
 		CannonicalName: canonicalName,
-		File:           file,
+		AstFile:        file,
 		Name:           typeName,
 		Comment:        comments,
 		TypeSpec:       typeSpec,
@@ -160,6 +162,7 @@ func NewTypeInfoFromExpr(expr ast.Expr, typeName string, commentGroups []*ast.Co
 			EmbeddedIn:     []ReferenceInfo{},
 			ReferencedIn:   []ReferenceInfo{},
 		},
+		Depth: -1, // Will be calculated later in post-processing
 	}
 
 	// Only set package info for local types (not for external references)
@@ -452,7 +455,7 @@ func (ti *TypeInfo) AddMethod(method FunctionInfo) {
 }
 
 func (ti *TypeInfo) ParseField(field *ast.Field) FieldInfo {
-	fi := NewFieldInfoFromAst(field, ti.GenDecl, ti.File, ti.Package, nil)
+	fi := NewFieldInfoFromAst(field, ti.GenDecl, ti.AstFile, ti.Package, nil)
 	ti.AddField(fi)
 	return fi
 }
@@ -461,7 +464,7 @@ func (ti *TypeInfo) ParseField(field *ast.Field) FieldInfo {
 func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 	if ti.Kind == TypeKindStruct && ti.structType != nil && ti.structType.Fields != nil {
 		for _, field := range ti.structType.Fields.List {
-			fi := NewFieldInfoFromAst(field, ti.GenDecl, ti.File, ti.Package, ctx)
+			fi := NewFieldInfoFromAst(field, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 			// Track usage for this field's type
 			if fi.TypeInfo != nil {
@@ -477,8 +480,8 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 			ti.AddField(fi)
 		}
 		// Parse methods if we have file context and should scan struct methods
-		if ti.File != nil && ti.Name != "" && shouldScanStructMethods(ctx) {
-			ti.parseMethods(ti.File, ti.Name, ctx)
+		if ti.AstFile != nil && ti.Name != "" && shouldScanStructMethods(ctx) {
+			ti.parseMethods(ti.AstFile, ti.Name, ctx)
 		}
 		// Clear the structType reference as it's no longer needed
 		ti.structType = nil
@@ -499,7 +502,7 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 					if funcType, ok := method.Type.(*ast.FuncType); ok {
 						fi := FunctionInfo{
 							Name:        methodName.Name,
-							File:        ti.File,
+							File:        ti.AstFile,
 							Comment:     utils.ExtractCommentText([]*ast.CommentGroup{method.Doc, method.Comment}),
 							Annotations: annotations.ParseAnnotations([]*ast.CommentGroup{method.Doc, method.Comment}),
 							Parms:       []ParameterInfo{},
@@ -512,7 +515,7 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 							for _, param := range funcType.Params.List {
 								if len(param.Names) > 0 {
 									for _, paramName := range param.Names {
-										paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+										paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 										// Track parameter usage
 										if paramTypedElem.TypeInfo != nil {
@@ -526,7 +529,7 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 									}
 								} else {
 									// unnamed parameter
-									paramTypedElem := parseTypedElement(param.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+									paramTypedElem := parseTypedElement(param.Type, "", nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 									// Track parameter usage
 									if paramTypedElem.TypeInfo != nil {
@@ -546,7 +549,7 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 							for _, result := range funcType.Results.List {
 								if len(result.Names) > 0 {
 									for _, returnName := range result.Names {
-										returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+										returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 										// Track return usage
 										if returnTypedElem.TypeInfo != nil {
@@ -560,7 +563,7 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 									}
 								} else {
 									// unnamed return value
-									returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+									returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 									// Track return usage
 									if returnTypedElem.TypeInfo != nil {
@@ -580,7 +583,7 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 				}
 			} else {
 				// Embedded interface - parse and inherit methods
-				embeddedType := GetOrCreateTypeInfo(ctx, method.Type, "", nil, nil, ti.File, ti.Package, nil)
+				embeddedType := GetOrCreateTypeInfo(ctx, method.Type, "", nil, nil, ti.AstFile, ti.Package, nil)
 				if embeddedType != nil && embeddedType.Kind == TypeKindInterface {
 					// Track embedded usage
 					trackEmbeddedUsage(embeddedType, ti)
@@ -621,7 +624,7 @@ func (ti *TypeInfo) parseTypeParams(ctx *ProcessContext) {
 				if paramIndex < len(ti.TypeParams) {
 					// Parse constraint if present
 					if param.Type != nil {
-						ti.TypeParams[paramIndex].Constraint = GetOrCreateTypeInfo(ctx, param.Type, "", nil, nil, ti.File, ti.Package, nil)
+						ti.TypeParams[paramIndex].Constraint = GetOrCreateTypeInfo(ctx, param.Type, "", nil, nil, ti.AstFile, ti.Package, nil)
 						if ti.TypeParams[paramIndex].Constraint != nil {
 							ti.TypeParams[paramIndex].TypeRef = ti.TypeParams[paramIndex].Constraint.CannonicalName
 						}
@@ -638,7 +641,7 @@ func (ti *TypeInfo) parseTypeParams(ctx *ProcessContext) {
 // parseAliasTarget parses the alias target with proper context for caching
 func (ti *TypeInfo) parseAliasTarget(ctx *ProcessContext) {
 	if ti.IsAlias && ti.TypeSpec != nil && ti.AliasTarget == nil {
-		ti.AliasTarget = GetOrCreateTypeInfo(ctx, ti.TypeSpec.Type, "", nil, nil, ti.File, ti.Package, nil)
+		ti.AliasTarget = GetOrCreateTypeInfo(ctx, ti.TypeSpec.Type, "", nil, nil, ti.AstFile, ti.Package, nil)
 		if ti.AliasTarget != nil {
 			ti.AliasTargetRef = ti.AliasTarget.CannonicalName
 		}
@@ -654,11 +657,11 @@ func (ti *TypeInfo) parseGenericInstantiation(ctx *ProcessContext) {
 	switch t := ti.TypeSpec.Type.(type) {
 	case *ast.IndexExpr:
 		// Single type argument: Node[T]
-		ti.BaseGenericType = GetOrCreateTypeInfo(ctx, t.X, "", nil, nil, ti.File, ti.Package, nil)
+		ti.BaseGenericType = GetOrCreateTypeInfo(ctx, t.X, "", nil, nil, ti.AstFile, ti.Package, nil)
 		if ti.BaseGenericType != nil {
 			ti.BaseGenericTypeRef = ti.BaseGenericType.CannonicalName
 		}
-		argType := GetOrCreateTypeInfo(ctx, t.Index, "", nil, nil, ti.File, ti.Package, nil)
+		argType := GetOrCreateTypeInfo(ctx, t.Index, "", nil, nil, ti.AstFile, ti.Package, nil)
 		ti.TypeArguments = []*TypeInfo{argType}
 		if argType != nil {
 			ti.TypeArgumentRefs = []string{argType.CannonicalName}
@@ -666,13 +669,13 @@ func (ti *TypeInfo) parseGenericInstantiation(ctx *ProcessContext) {
 
 	case *ast.IndexListExpr:
 		// Multiple type arguments: Node[T, P]
-		ti.BaseGenericType = GetOrCreateTypeInfo(ctx, t.X, "", nil, nil, ti.File, ti.Package, nil)
+		ti.BaseGenericType = GetOrCreateTypeInfo(ctx, t.X, "", nil, nil, ti.AstFile, ti.Package, nil)
 		if ti.BaseGenericType != nil {
 			ti.BaseGenericTypeRef = ti.BaseGenericType.CannonicalName
 		}
 		ti.TypeArgumentRefs = []string{}
 		for _, arg := range t.Indices {
-			argType := GetOrCreateTypeInfo(ctx, arg, "", nil, nil, ti.File, ti.Package, nil)
+			argType := GetOrCreateTypeInfo(ctx, arg, "", nil, nil, ti.AstFile, ti.Package, nil)
 			ti.TypeArguments = append(ti.TypeArguments, argType)
 			if argType != nil {
 				ti.TypeArgumentRefs = append(ti.TypeArgumentRefs, argType.CannonicalName)
@@ -708,7 +711,7 @@ func (ti *TypeInfo) parseContainerTypes(ctx *ProcessContext) {
 	switch t := ti.TypeSpec.Type.(type) {
 	case *ast.ArrayType:
 		// Parse element type for array or slice
-		ti.ElementType = GetOrCreateTypeInfo(ctx, t.Elt, "", nil, nil, ti.File, ti.Package, nil)
+		ti.ElementType = GetOrCreateTypeInfo(ctx, t.Elt, "", nil, nil, ti.AstFile, ti.Package, nil)
 		if ti.ElementType != nil {
 			ti.ElementTypeRef = ti.ElementType.CannonicalName
 			// Track container element usage
@@ -716,13 +719,13 @@ func (ti *TypeInfo) parseContainerTypes(ctx *ProcessContext) {
 		}
 	case *ast.MapType:
 		// Parse key and value types for map
-		ti.KeyType = GetOrCreateTypeInfo(ctx, t.Key, "", nil, nil, ti.File, ti.Package, nil)
+		ti.KeyType = GetOrCreateTypeInfo(ctx, t.Key, "", nil, nil, ti.AstFile, ti.Package, nil)
 		if ti.KeyType != nil {
 			ti.KeyTypeRef = ti.KeyType.CannonicalName
 			// Track map key usage
 			trackFieldUsage(ti.KeyType, ti, "key")
 		}
-		ti.ElementType = GetOrCreateTypeInfo(ctx, t.Value, "", nil, nil, ti.File, ti.Package, nil)
+		ti.ElementType = GetOrCreateTypeInfo(ctx, t.Value, "", nil, nil, ti.AstFile, ti.Package, nil)
 		if ti.ElementType != nil {
 			ti.ElementTypeRef = ti.ElementType.CannonicalName
 			// Track map value usage
@@ -741,7 +744,7 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 		// Create a FunctionInfo to hold the signature
 		fi := &FunctionInfo{
 			Name:        ti.Name,
-			File:        ti.File,
+			File:        ti.AstFile,
 			Comment:     ti.Comment,
 			Annotations: ti.Annotations,
 			Parms:       []ParameterInfo{},
@@ -755,7 +758,7 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 				if len(param.Names) > 0 {
 					// named parameters
 					for _, paramName := range param.Names {
-						paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+						paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 						// Track usage for function type parameter types
 						if paramTypedElem.TypeInfo != nil {
@@ -769,7 +772,7 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 					}
 				} else {
 					// unnamed parameter
-					paramTypedElem := parseTypedElement(param.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+					paramTypedElem := parseTypedElement(param.Type, "", nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 					// Track usage for function type parameter types
 					if paramTypedElem.TypeInfo != nil {
@@ -790,7 +793,7 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 				if len(result.Names) > 0 {
 					// named return values
 					for _, returnName := range result.Names {
-						returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+						returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 						// Track usage for function type return types
 						if returnTypedElem.TypeInfo != nil {
@@ -804,7 +807,7 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 					}
 				} else {
 					// unnamed return value
-					returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+					returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, ti.AstFile, ti.Package, ctx)
 
 					// Track usage for function type return types
 					if returnTypedElem.TypeInfo != nil {
@@ -988,4 +991,198 @@ func UpdateUsageFlags(typeInfo *TypeInfo) {
 	// 2. Type is NOT used directly (no ReferencedIn entries)
 	typeInfo.UsageInfo.IsOnlyEmbedded = len(typeInfo.UsageInfo.EmbeddedIn) > 0 &&
 		len(typeInfo.UsageInfo.ReferencedIn) == 0
+}
+
+// Include type and depth tracking functions
+
+// isInScannedPackages checks if a package path matches any of the scanned package patterns
+func isInScannedPackages(pkgPath string, patterns []string) bool {
+	if pkgPath == "" {
+		return false
+	}
+	for _, pattern := range patterns {
+		// Handle file patterns like "./models/*.go" by extracting the directory part
+		// and checking if the package name matches
+		if strings.HasSuffix(pattern, "*.go") {
+			// Extract directory from pattern (e.g., "./models/*.go" -> "models")
+			dir := filepath.Dir(pattern)
+			dir = strings.TrimPrefix(dir, "./")
+			dir = strings.TrimPrefix(dir, "/")
+
+			// Check if package path ends with the directory name
+			if strings.HasSuffix(pkgPath, "/"+dir) || strings.HasSuffix(pkgPath, dir) {
+				return true
+			}
+		} else {
+			// Direct package path matching
+			if strings.HasPrefix(pkgPath, pattern) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isSameModule checks if a package belongs to the same module
+func isSameModule(pkgPath, modulePath string) bool {
+	if pkgPath == "" || modulePath == "" {
+		return false
+	}
+	return strings.HasPrefix(pkgPath, modulePath)
+}
+
+// isStandardLibrary checks if a package is from Go's standard library
+func isStandardLibrary(pkgPath string) bool {
+	if pkgPath == "" {
+		return false
+	}
+	// Standard library packages don't contain dots or have specific known prefixes
+	return !strings.Contains(pkgPath, ".") ||
+		strings.HasPrefix(pkgPath, "golang.org/x/") ||
+		strings.HasPrefix(pkgPath, "std/")
+}
+
+// classifyIncludeType determines the include type for a package
+func classifyIncludeType(pkgPath string, ctx *ProcessContext) IncludeType {
+	if ctx == nil || ctx.Config == nil || pkgPath == "" {
+		return IncludeTypeExternal
+	}
+
+	if isInScannedPackages(pkgPath, ctx.Config.Scanning.Packages) {
+		return IncludeTypeScanned
+	}
+
+	if isSameModule(pkgPath, ctx.ModulePath) {
+		return IncludeTypeLocal
+	}
+
+	if isStandardLibrary(pkgPath) {
+		return IncludeTypeStd
+	}
+
+	return IncludeTypeExternal
+}
+
+// findReferencedTypes collects all type canonical names referenced by a type
+func findReferencedTypes(typeInfo *TypeInfo) []string {
+	var referenced []string
+
+	// Collect from fields
+	for _, field := range typeInfo.Fields {
+		if field.TypeInfo != nil {
+			referenced = append(referenced, field.TypeInfo.CannonicalName)
+		}
+	}
+
+	// Collect from method parameters and returns
+	for _, method := range typeInfo.Methods {
+		for _, param := range method.Parms {
+			if param.TypeInfo != nil {
+				referenced = append(referenced, param.TypeInfo.CannonicalName)
+			}
+		}
+		for _, ret := range method.Returns {
+			if ret.TypeInfo != nil {
+				referenced = append(referenced, ret.TypeInfo.CannonicalName)
+			}
+		}
+	}
+
+	// Collect from function signature (for function types)
+	if typeInfo.FunctionSig != nil {
+		for _, param := range typeInfo.FunctionSig.Parms {
+			if param.TypeInfo != nil {
+				referenced = append(referenced, param.TypeInfo.CannonicalName)
+			}
+		}
+		for _, ret := range typeInfo.FunctionSig.Returns {
+			if ret.TypeInfo != nil {
+				referenced = append(referenced, ret.TypeInfo.CannonicalName)
+			}
+		}
+	}
+
+	// Collect from container types
+	if typeInfo.ElementType != nil {
+		referenced = append(referenced, typeInfo.ElementType.CannonicalName)
+	}
+	if typeInfo.KeyType != nil {
+		referenced = append(referenced, typeInfo.KeyType.CannonicalName)
+	}
+
+	// Collect from generic type arguments
+	for _, arg := range typeInfo.TypeArguments {
+		if arg != nil {
+			referenced = append(referenced, arg.CannonicalName)
+		}
+	}
+
+	// Collect from alias target
+	if typeInfo.AliasTarget != nil {
+		referenced = append(referenced, typeInfo.AliasTarget.CannonicalName)
+	}
+
+	return referenced
+}
+
+// CalculateTypeDepths calculates the depth of all types from scanned packages
+func CalculateTypeDepths(ctx *ProcessContext) {
+	if ctx == nil || ctx.Types == nil {
+		return
+	}
+
+	// First, update include types for all types that might not have been classified
+	UpdateIncludeTypes(ctx)
+
+	queue := []string{}
+	visited := make(map[string]bool)
+
+	// Start with all scanned types at depth 0
+	for canonicalName, typeInfo := range ctx.Types {
+		if typeInfo.IncludeType == IncludeTypeScanned {
+			typeInfo.Depth = 0
+			queue = append(queue, canonicalName)
+			visited[canonicalName] = true
+		}
+	}
+
+	// BFS to calculate depths
+	for len(queue) > 0 {
+		currentName := queue[0]
+		queue = queue[1:]
+		currentType := ctx.Types[currentName]
+
+		if currentType == nil {
+			continue
+		}
+
+		// Find all types referenced by currentType
+		referencedTypes := findReferencedTypes(currentType)
+
+		for _, refName := range referencedTypes {
+			if refName == "" || visited[refName] {
+				continue
+			}
+
+			refType := ctx.Types[refName]
+			if refType != nil {
+				refType.Depth = currentType.Depth + 1
+				visited[refName] = true
+				queue = append(queue, refName)
+			}
+		}
+	}
+}
+
+// UpdateIncludeTypes updates the include type classification for all types
+func UpdateIncludeTypes(ctx *ProcessContext) {
+	if ctx == nil || ctx.Types == nil {
+		return
+	}
+
+	for _, typeInfo := range ctx.Types {
+		if typeInfo.Package != nil {
+			typeInfo.IncludeType = classifyIncludeType(typeInfo.Package.PkgPath, ctx)
+		}
+	}
 }

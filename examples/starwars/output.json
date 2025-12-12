@@ -37,7 +37,9 @@
             "Kind": "parameter"
           }
         ]
-      }
+      },
+      "IncludeType": "std",
+      "Depth": 1
     },
     "github.gom/pablor21/gonnotation/examples/starwars/base.BaseModel": {
       "Package": {
@@ -76,7 +78,9 @@
           }
         ],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "local",
+      "Depth": 1
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.AdvancedReadWriter": {
       "Package": {
@@ -200,7 +204,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Character": {
       "Package": {
@@ -272,7 +278,98 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
+    },
+    "github.gom/pablor21/gonnotation/examples/starwars/models.Droid": {
+      "Package": {
+        "ID": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "Name": "models",
+        "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "GoFiles": [
+          "/workspace/gonnotation/examples/starwars/models/characters.go",
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
+        ]
+      },
+      "Kind": "struct",
+      "Visibility": "public",
+      "CannonicalName": "github.gom/pablor21/gonnotation/examples/starwars/models.Droid",
+      "Name": "Droid",
+      "PkgName": "models",
+      "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+      "Comment": "",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [
+        {
+          "Name": "Name",
+          "IsPointer": false,
+          "Comment": "Name of the droid character",
+          "Annotations": [
+            {
+              "Name": "field",
+              "Params": {
+                "": "name"
+              },
+              "RawText": "@field(\"name\")"
+            }
+          ],
+          "TypeRef": "string",
+          "Tag": {
+            "ValuePos": 656826,
+            "Kind": 9,
+            "Value": "`json:\"name\" schema:\"name\"`"
+          },
+          "IsEmbedded": false,
+          "Tags": {
+            "json": "name",
+            "schema": "name"
+          },
+          "Visibility": "public"
+        },
+        {
+          "Name": "PrimaryFunc",
+          "IsPointer": false,
+          "Comment": "",
+          "Annotations": null,
+          "TypeRef": "string",
+          "Tag": null,
+          "IsEmbedded": false,
+          "Tags": null,
+          "Visibility": "public"
+        },
+        {
+          "Name": "CreatedAt",
+          "IsPointer": true,
+          "Comment": "",
+          "Annotations": null,
+          "TypeRef": "time.Time",
+          "Tag": null,
+          "IsEmbedded": false,
+          "Tags": null,
+          "Visibility": "public"
+        }
+      ],
+      "Methods": [],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.EnumIota": {
       "Package": {
@@ -343,7 +440,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.EnumString": {
       "Package": {
@@ -414,7 +513,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Human": {
       "Package": {
@@ -480,7 +581,7 @@
           ],
           "TypeRef": "string",
           "Tag": {
-            "ValuePos": 656226,
+            "ValuePos": 657059,
             "Kind": 9,
             "Value": "`json:\"name\" schema:\"name\"`"
           },
@@ -509,7 +610,7 @@
           "Annotations": null,
           "TypeRef": "github.gom/pablor21/gonnotation/examples/starwars/models.anonymous",
           "Tag": {
-            "ValuePos": 656296,
+            "ValuePos": 657129,
             "Kind": 9,
             "Value": "`json:\"friends\" schema:\"friends\"`"
           },
@@ -554,7 +655,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Node": {
       "Package": {
@@ -653,7 +756,9 @@
               "IsOnlyEmbedded": false,
               "EmbeddedIn": [],
               "ReferencedIn": []
-            }
+            },
+            "IncludeType": "scanned",
+            "Depth": 0
           },
           "TypeRef": "github.gom/pablor21/gonnotation/examples/starwars/models.Character"
         },
@@ -719,7 +824,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Node[github.gom/pablor21/gonnotation/examples/starwars/models.T,github.gom/pablor21/gonnotation/examples/starwars/models.P]": {
       "Package": {
@@ -768,7 +875,9 @@
             "Kind": "field"
           }
         ]
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.P": {
       "Package": {
@@ -812,7 +921,9 @@
             "Kind": "field"
           }
         ]
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.ReadWriter": {
       "Package": {
@@ -908,7 +1019,9 @@
           }
         ],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Reader": {
       "Package": {
@@ -970,7 +1083,9 @@
           }
         ],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.SimpleAlias": {
       "Package": {
@@ -1008,7 +1123,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.T": {
       "Package": {
@@ -1052,7 +1169,9 @@
             "Kind": "field"
           }
         ]
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Test": {
       "Package": {
@@ -1131,7 +1250,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": null,
         "ReferencedIn": null
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.TestEnum1": {
       "Package": {
@@ -1194,7 +1315,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.TestEnum2": {
       "Package": {
@@ -1257,7 +1380,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.TestEnum3": {
       "Package": {
@@ -1320,7 +1445,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Writer": {
       "Package": {
@@ -1382,7 +1509,9 @@
           }
         ],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.XNode": {
       "Package": {
@@ -1467,7 +1596,9 @@
         "IsOnlyEmbedded": false,
         "EmbeddedIn": [],
         "ReferencedIn": []
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.anonymous": {
       "Package": {
@@ -1511,7 +1642,9 @@
             "Kind": "field"
           }
         ]
-      }
+      },
+      "IncludeType": "scanned",
+      "Depth": 0
     },
     "time.Time": {
       "Package": {
@@ -1545,12 +1678,19 @@
         "EmbeddedIn": [],
         "ReferencedIn": [
           {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Droid",
+            "Name": "CreatedAt",
+            "Kind": "field"
+          },
+          {
             "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Human",
             "Name": "CreatedAt",
             "Kind": "field"
           }
         ]
-      }
+      },
+      "IncludeType": "std",
+      "Depth": 1
     }
   }
 }

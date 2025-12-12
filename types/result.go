@@ -13,12 +13,12 @@ import (
 )
 
 type ProcessResult struct {
-	Elements map[string]TypeInfo // keyed by CannonicalName
+	Elements map[string]*TypeInfo // keyed by CannonicalName
 }
 
 func NewParseResult() *ProcessResult {
 	return &ProcessResult{
-		Elements: make(map[string]TypeInfo),
+		Elements: make(map[string]*TypeInfo),
 	}
 }
 
@@ -73,7 +73,7 @@ func (pr *ProcessResult) parsePackageNormalMode(ctx *ProcessContext, pkg *packag
 
 	// Now copy the final Types from the cache to the result (after enum detection)
 	for canonicalName, typeInfo := range ctx.Types {
-		pr.Elements[canonicalName] = *typeInfo
+		pr.Elements[canonicalName] = typeInfo
 	}
 
 	return nil
@@ -191,7 +191,7 @@ func (pr *ProcessResult) parsePackageReferencedMode(ctx *ProcessContext, pkg *pa
 
 	// Now copy the final Types from the cache to the result (after enum detection)
 	for canonicalName, typeInfo := range ctx.Types {
-		pr.Elements[canonicalName] = *typeInfo
+		pr.Elements[canonicalName] = typeInfo
 	}
 
 	return nil

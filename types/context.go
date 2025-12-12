@@ -15,6 +15,7 @@ type ProcessContext struct {
 	Logger       logger.Logger
 	Types        map[string]*TypeInfo
 	ConstsByType map[string][]EnumValue // Map type name to its const values for enum detection
+	ModulePath   string                 // The module path of the project being scanned
 }
 
 // GetOrCreateTypeInfo retrieves a type from cache or creates it if not exists
