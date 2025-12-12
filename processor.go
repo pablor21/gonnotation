@@ -54,5 +54,11 @@ func parsePackages(ctx *types.ProcessContext, packages []*packages.Package) (*ty
 			return nil, fmt.Errorf("failed to parse package %s: %w", pkg.PkgPath, err)
 		}
 	}
+
+	// Update usage flags for all types after parsing is complete
+	for _, typeInfo := range ctx.Types {
+		types.UpdateUsageFlags(typeInfo)
+	}
+
 	return res, nil
 }

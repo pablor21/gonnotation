@@ -54,5 +54,11 @@ func NewFieldInfoFromAst(field *ast.Field, genDecl *ast.GenDecl, file *ast.File,
 		fi.Tags = parseStructTags(field.Tag.Value)
 	}
 
+	// Track usage if we have context and the parent type info
+	if ctx != nil && typedElem.TypeInfo != nil {
+		// Need to get the parent type - we'll do this in parseFields where we have the parent context
+		// For now, we mark this as deferred tracking
+	}
+
 	return fi
 }

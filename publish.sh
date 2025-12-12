@@ -118,6 +118,14 @@ else
     fi
 fi
 
+# Check if golangci-lint is available (either installed globally or as go tool)
+if ! command -v golangci-lint &> /dev/null && ! go list -m github.com/golangci/golangci-lint &> /dev/null; then
+    print_error "golangci-lint is not available"
+    print_info "Install globally with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+    print_info "Or it should be available as a tool dependency (run 'go mod tidy' first)"
+    exit 1
+fi
+
 print_info "Publishing version: $VERSION"
 
 # Check if on required branch
@@ -140,6 +148,20 @@ if [[ -n $(git status -s) ]]; then
         exit 1
     fi
 fi
+
+# Run linter
+print_info "Running golangci-lint..."
+if command -v golangci-lint &> /dev/null; then
+    golangci-lint run
+else
+    go run github.com/golangci/golangci-lint/cmd/golangci-lint run
+fi
+if [ $? -ne 0 ]; then
+    print_error "Linting failed"
+    exit 1
+fi
+
+print_info "Linting passed ✓"
 
 # Run tests in main module (with replace directive intact)
 print_info "Running tests in main module..."

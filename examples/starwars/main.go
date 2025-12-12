@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 
 	"github.com/pablor21/gonnotation"
 	"github.com/pablor21/gonnotation/config"
@@ -19,5 +20,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	println(string(bytes))
+	str := string(bytes)
+	println(str)
+	// save to output.json
+	err = ioutil.WriteFile("output.json", bytes, 0644)
+	if err != nil {
+		panic(err)
+	}
 }

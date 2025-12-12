@@ -556,6 +556,12 @@ func (pr *ProcessResult) AddFuncDecl(ctx *ProcessContext, funcDecl *ast.FuncDecl
 				// named parameters
 				for _, paramName := range param.Names {
 					paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, nil, file, pkg, ctx)
+
+					// Track usage for parameter types
+					if paramTypedElem.TypeInfo != nil {
+						trackParameterUsage(paramTypedElem.TypeInfo, canonicalName, paramName.Name)
+					}
+
 					pi := ParameterInfo{
 						TypedElement: paramTypedElem,
 					}
@@ -564,6 +570,12 @@ func (pr *ProcessResult) AddFuncDecl(ctx *ProcessContext, funcDecl *ast.FuncDecl
 			} else {
 				// unnamed parameter (shouldn't happen in Go, but handle it)
 				paramTypedElem := parseTypedElement(param.Type, "", nil, nil, file, pkg, ctx)
+
+				// Track usage for parameter types
+				if paramTypedElem.TypeInfo != nil {
+					trackParameterUsage(paramTypedElem.TypeInfo, canonicalName, "")
+				}
+
 				pi := ParameterInfo{
 					TypedElement: paramTypedElem,
 				}
@@ -579,6 +591,12 @@ func (pr *ProcessResult) AddFuncDecl(ctx *ProcessContext, funcDecl *ast.FuncDecl
 				// named return values
 				for _, returnName := range result.Names {
 					returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, nil, file, pkg, ctx)
+
+					// Track usage for return types
+					if returnTypedElem.TypeInfo != nil {
+						trackReturnUsage(returnTypedElem.TypeInfo, canonicalName, returnName.Name)
+					}
+
 					ri := ReturnInfo{
 						TypedElement: returnTypedElem,
 					}
@@ -587,6 +605,12 @@ func (pr *ProcessResult) AddFuncDecl(ctx *ProcessContext, funcDecl *ast.FuncDecl
 			} else {
 				// unnamed return value
 				returnTypedElem := parseTypedElement(result.Type, "", nil, nil, file, pkg, ctx)
+
+				// Track usage for return types
+				if returnTypedElem.TypeInfo != nil {
+					trackReturnUsage(returnTypedElem.TypeInfo, canonicalName, "")
+				}
+
 				ri := ReturnInfo{
 					TypedElement: returnTypedElem,
 				}
@@ -607,6 +631,7 @@ func (pr *ProcessResult) AddFuncDecl(ctx *ProcessContext, funcDecl *ast.FuncDecl
 		Comment:        utils.ExtractCommentText([]*ast.CommentGroup{funcDecl.Doc}),
 		Annotations:    annotations.ParseAnnotations([]*ast.CommentGroup{funcDecl.Doc}),
 		FunctionSig:    fi,
+		UsageInfo:      &UsageInfo{}, // Initialize usage tracking
 	}
 
 	// Add to cache

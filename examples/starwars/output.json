@@ -1,5 +1,44 @@
 {
   "Elements": {
+    "context.Context": {
+      "Package": {
+        "ID": "context",
+        "Name": "context",
+        "PkgPath": "context"
+      },
+      "Kind": "struct",
+      "Visibility": "private",
+      "CannonicalName": "context.Context",
+      "Name": "Context",
+      "PkgName": "context",
+      "PkgPath": "context",
+      "Comment": "",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [],
+      "Methods": [],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Human",
+            "Name": "ctx",
+            "Kind": "parameter"
+          }
+        ]
+      }
+    },
     "github.gom/pablor21/gonnotation/examples/starwars/base.BaseModel": {
       "Package": {
         "ID": "github.gom/pablor21/gonnotation/examples/starwars/base",
@@ -26,7 +65,142 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": true,
+        "EmbeddedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Human",
+            "Name": "",
+            "Kind": "embedded"
+          }
+        ],
+        "ReferencedIn": []
+      }
+    },
+    "github.gom/pablor21/gonnotation/examples/starwars/models.AdvancedReadWriter": {
+      "Package": {
+        "ID": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "Name": "models",
+        "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "GoFiles": [
+          "/workspace/gonnotation/examples/starwars/models/characters.go",
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
+        ]
+      },
+      "Kind": "interface",
+      "Visibility": "public",
+      "CannonicalName": "github.gom/pablor21/gonnotation/examples/starwars/models.AdvancedReadWriter",
+      "Name": "AdvancedReadWriter",
+      "PkgName": "models",
+      "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+      "Comment": "Interface with mixed embedded and direct methods",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [],
+      "Methods": [
+        {
+          "Name": "Read",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Visibility": "public"
+        },
+        {
+          "Name": "Write",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [
+            {
+              "Name": "data",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Returns": [],
+          "Visibility": "public"
+        },
+        {
+          "Name": "Close",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "error"
+            }
+          ],
+          "Visibility": "public"
+        },
+        {
+          "Name": "Flush",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "error"
+            }
+          ],
+          "Visibility": "public"
+        },
+        {
+          "Name": "GetStatus",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Visibility": "public"
+        }
+      ],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Character": {
       "Package": {
@@ -35,8 +209,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "interface",
@@ -93,7 +267,12 @@
           "Visibility": "public"
         }
       ],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.EnumIota": {
       "Package": {
@@ -102,8 +281,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "enum",
@@ -159,7 +338,12 @@
           "Comment": "",
           "Annotations": null
         }
-      ]
+      ],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.EnumString": {
       "Package": {
@@ -168,8 +352,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "enum",
@@ -225,7 +409,12 @@
           "Comment": "",
           "Annotations": null
         }
-      ]
+      ],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Human": {
       "Package": {
@@ -234,8 +423,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "struct",
@@ -360,7 +549,12 @@
           "Visibility": "public"
         }
       ],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Node": {
       "Package": {
@@ -369,8 +563,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "struct",
@@ -396,8 +590,8 @@
               "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
               "GoFiles": [
                 "/workspace/gonnotation/examples/starwars/models/characters.go",
-                "/workspace/gonnotation/examples/starwars/models/enums.go",
-                "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+                "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+                "/workspace/gonnotation/examples/starwars/models/enums.go"
               ]
             },
             "Kind": "interface",
@@ -454,7 +648,12 @@
                 "Visibility": "public"
               }
             ],
-            "EnumValues": []
+            "EnumValues": [],
+            "UsageInfo": {
+              "IsOnlyEmbedded": false,
+              "EmbeddedIn": [],
+              "ReferencedIn": []
+            }
           },
           "TypeRef": "github.gom/pablor21/gonnotation/examples/starwars/models.Character"
         },
@@ -515,7 +714,12 @@
         }
       ],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Node[github.gom/pablor21/gonnotation/examples/starwars/models.T,github.gom/pablor21/gonnotation/examples/starwars/models.P]": {
       "Package": {
@@ -524,8 +728,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "struct",
@@ -548,7 +752,23 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Node",
+            "Name": "Next",
+            "Kind": "field"
+          },
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Node",
+            "Name": "Prev",
+            "Kind": "field"
+          }
+        ]
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.P": {
       "Package": {
@@ -557,8 +777,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "struct",
@@ -581,7 +801,176 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Node",
+            "Name": "Key",
+            "Kind": "field"
+          }
+        ]
+      }
+    },
+    "github.gom/pablor21/gonnotation/examples/starwars/models.ReadWriter": {
+      "Package": {
+        "ID": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "Name": "models",
+        "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "GoFiles": [
+          "/workspace/gonnotation/examples/starwars/models/characters.go",
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
+        ]
+      },
+      "Kind": "interface",
+      "Visibility": "public",
+      "CannonicalName": "github.gom/pablor21/gonnotation/examples/starwars/models.ReadWriter",
+      "Name": "ReadWriter",
+      "PkgName": "models",
+      "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+      "Comment": "Interface with embedded interfaces",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [],
+      "Methods": [
+        {
+          "Name": "Read",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Visibility": "public"
+        },
+        {
+          "Name": "Write",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [
+            {
+              "Name": "data",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Returns": [],
+          "Visibility": "public"
+        },
+        {
+          "Name": "Close",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "error"
+            }
+          ],
+          "Visibility": "public"
+        }
+      ],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": true,
+        "EmbeddedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.AdvancedReadWriter",
+            "Name": "",
+            "Kind": "embedded"
+          }
+        ],
+        "ReferencedIn": []
+      }
+    },
+    "github.gom/pablor21/gonnotation/examples/starwars/models.Reader": {
+      "Package": {
+        "ID": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "Name": "models",
+        "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "GoFiles": [
+          "/workspace/gonnotation/examples/starwars/models/characters.go",
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
+        ]
+      },
+      "Kind": "interface",
+      "Visibility": "public",
+      "CannonicalName": "github.gom/pablor21/gonnotation/examples/starwars/models.Reader",
+      "Name": "Reader",
+      "PkgName": "models",
+      "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+      "Comment": "Base interfaces to embed",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [],
+      "Methods": [
+        {
+          "Name": "Read",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [],
+          "Returns": [
+            {
+              "Name": "",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Visibility": "public"
+        }
+      ],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": true,
+        "EmbeddedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.ReadWriter",
+            "Name": "",
+            "Kind": "embedded"
+          }
+        ],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.SimpleAlias": {
       "Package": {
@@ -590,8 +979,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "alias",
@@ -614,7 +1003,12 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.T": {
       "Package": {
@@ -623,8 +1017,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "struct",
@@ -647,7 +1041,18 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Node",
+            "Name": "Value",
+            "Kind": "field"
+          }
+        ]
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.Test": {
       "Package": {
@@ -656,8 +1061,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "function",
@@ -721,7 +1126,12 @@
       ],
       "Fields": null,
       "Methods": null,
-      "EnumValues": null
+      "EnumValues": null,
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": null,
+        "ReferencedIn": null
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.TestEnum1": {
       "Package": {
@@ -730,8 +1140,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "enum",
@@ -779,7 +1189,12 @@
           "Comment": "2 * 2 = 4",
           "Annotations": null
         }
-      ]
+      ],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.TestEnum2": {
       "Package": {
@@ -788,8 +1203,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "enum",
@@ -837,7 +1252,12 @@
           "Comment": "2 - 1 = 1",
           "Annotations": null
         }
-      ]
+      ],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.TestEnum3": {
       "Package": {
@@ -846,8 +1266,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "enum",
@@ -895,7 +1315,74 @@
           "Comment": "2 + 100 = 102",
           "Annotations": null
         }
-      ]
+      ],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
+    },
+    "github.gom/pablor21/gonnotation/examples/starwars/models.Writer": {
+      "Package": {
+        "ID": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "Name": "models",
+        "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+        "GoFiles": [
+          "/workspace/gonnotation/examples/starwars/models/characters.go",
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
+        ]
+      },
+      "Kind": "interface",
+      "Visibility": "public",
+      "CannonicalName": "github.gom/pablor21/gonnotation/examples/starwars/models.Writer",
+      "Name": "Writer",
+      "PkgName": "models",
+      "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
+      "Comment": "",
+      "IsGeneric": false,
+      "IsAlias": false,
+      "AliasTargetRef": "",
+      "IsGenericInstantiation": false,
+      "BaseGenericTypeRef": "",
+      "TypeArgumentRefs": null,
+      "TypeParams": [],
+      "ElementTypeRef": "",
+      "KeyTypeRef": "",
+      "FunctionSig": null,
+      "Annotations": null,
+      "Fields": [],
+      "Methods": [
+        {
+          "Name": "Write",
+          "Comment": "",
+          "Annotations": null,
+          "Parms": [
+            {
+              "Name": "data",
+              "IsPointer": false,
+              "Comment": "",
+              "Annotations": null,
+              "Visibility": "public",
+              "TypeRef": "string"
+            }
+          ],
+          "Returns": [],
+          "Visibility": "public"
+        }
+      ],
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": true,
+        "EmbeddedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.ReadWriter",
+            "Name": "",
+            "Kind": "embedded"
+          }
+        ],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.XNode": {
       "Package": {
@@ -904,8 +1391,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "struct",
@@ -975,7 +1462,12 @@
         }
       ],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": []
+      }
     },
     "github.gom/pablor21/gonnotation/examples/starwars/models.anonymous": {
       "Package": {
@@ -984,8 +1476,8 @@
         "PkgPath": "github.gom/pablor21/gonnotation/examples/starwars/models",
         "GoFiles": [
           "/workspace/gonnotation/examples/starwars/models/characters.go",
-          "/workspace/gonnotation/examples/starwars/models/enums.go",
-          "/workspace/gonnotation/examples/starwars/models/test_enums.go"
+          "/workspace/gonnotation/examples/starwars/models/embedded_interfaces.go",
+          "/workspace/gonnotation/examples/starwars/models/enums.go"
         ]
       },
       "Kind": "slice",
@@ -1008,7 +1500,18 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Human",
+            "Name": "Friends",
+            "Kind": "field"
+          }
+        ]
+      }
     },
     "time.Time": {
       "Package": {
@@ -1036,7 +1539,18 @@
       "Annotations": null,
       "Fields": [],
       "Methods": [],
-      "EnumValues": []
+      "EnumValues": [],
+      "UsageInfo": {
+        "IsOnlyEmbedded": false,
+        "EmbeddedIn": [],
+        "ReferencedIn": [
+          {
+            "RefType": "github.gom/pablor21/gonnotation/examples/starwars/models.Human",
+            "Name": "CreatedAt",
+            "Kind": "field"
+          }
+        ]
+      }
     }
   }
 }

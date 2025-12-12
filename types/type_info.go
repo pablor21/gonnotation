@@ -32,6 +32,14 @@ const (
 	VisibilityPrivate   Visibility = "private"
 )
 
+type IncludeType string
+
+const (
+	IncludeTypeLocal    IncludeType = "local"
+	IncludeTypeExternal IncludeType = "external"
+	IncludeTypeStd      IncludeType = "std"
+)
+
 type TypeInfo struct {
 	Package                *packages.Package
 	Kind                   TypeKind
@@ -67,6 +75,13 @@ type TypeInfo struct {
 	Fields      []FieldInfo
 	Methods     []FunctionInfo
 	EnumValues  []EnumValue // For enum types
+
+	// Usage information
+	UsageInfo *UsageInfo
+
+	// Include information
+	IncludeType IncludeType // local, external or std
+	Depth       int
 
 	// Internal field to store struct AST for deferred parsing
 	structType    *ast.StructType    `json:"-"` // for deferred field parsing
@@ -140,6 +155,11 @@ func NewTypeInfoFromExpr(expr ast.Expr, typeName string, commentGroups []*ast.Co
 		Annotations:    ann,
 		TypeParams:     []TypeParam{},
 		EnumValues:     []EnumValue{},
+		UsageInfo: &UsageInfo{
+			IsOnlyEmbedded: false,
+			EmbeddedIn:     []ReferenceInfo{},
+			ReferencedIn:   []ReferenceInfo{},
+		},
 	}
 
 	// Only set package info for local types (not for external references)
@@ -336,7 +356,7 @@ func NewTypeInfoFromExpr(expr ast.Expr, typeName string, commentGroups []*ast.Co
 }
 
 // parseMethods extracts methods associated with a type from the file
-func (ti *TypeInfo) parseMethods(file *ast.File, typeName string) {
+func (ti *TypeInfo) parseMethods(file *ast.File, typeName string, ctx *ProcessContext) {
 	// This method is called from parseFields, so we don't have direct access to ParsingContext
 	// Methods filtering will be handled at a higher level when this is called
 	for _, fdecl := range file.Decls {
@@ -370,7 +390,13 @@ func (ti *TypeInfo) parseMethods(file *ast.File, typeName string) {
 			if funcDecl.Type.Params != nil {
 				for _, param := range funcDecl.Type.Params.List {
 					for _, paramName := range param.Names {
-						paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, file, ti.Package, nil)
+						paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, file, ti.Package, ctx)
+
+						// Track usage for method parameter types
+						if paramTypedElem.TypeInfo != nil {
+							trackParameterUsage(paramTypedElem.TypeInfo, ti.CannonicalName, paramName.Name)
+						}
+
 						pi := ParameterInfo{
 							TypedElement: paramTypedElem,
 						}
@@ -384,7 +410,13 @@ func (ti *TypeInfo) parseMethods(file *ast.File, typeName string) {
 					if len(result.Names) > 0 {
 						// named return values
 						for _, returnName := range result.Names {
-							returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, file, ti.Package, nil)
+							returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, file, ti.Package, ctx)
+
+							// Track usage for method return types
+							if returnTypedElem.TypeInfo != nil {
+								trackReturnUsage(returnTypedElem.TypeInfo, ti.CannonicalName, returnName.Name)
+							}
+
 							ri := ReturnInfo{
 								TypedElement: returnTypedElem,
 							}
@@ -392,7 +424,13 @@ func (ti *TypeInfo) parseMethods(file *ast.File, typeName string) {
 						}
 					} else {
 						// unnamed return value
-						returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, file, ti.Package, nil)
+						returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, file, ti.Package, ctx)
+
+						// Track usage for method return types
+						if returnTypedElem.TypeInfo != nil {
+							trackReturnUsage(returnTypedElem.TypeInfo, ti.CannonicalName, "")
+						}
+
 						ri := ReturnInfo{
 							TypedElement: returnTypedElem,
 						}
@@ -424,11 +462,23 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 	if ti.Kind == TypeKindStruct && ti.structType != nil && ti.structType.Fields != nil {
 		for _, field := range ti.structType.Fields.List {
 			fi := NewFieldInfoFromAst(field, ti.GenDecl, ti.File, ti.Package, ctx)
+
+			// Track usage for this field's type
+			if fi.TypeInfo != nil {
+				if fi.IsEmbedded {
+					// Track embedded usage
+					trackEmbeddedUsage(fi.TypeInfo, ti)
+				} else {
+					// Track field usage
+					trackFieldUsage(fi.TypeInfo, ti, fi.Name)
+				}
+			}
+
 			ti.AddField(fi)
 		}
 		// Parse methods if we have file context and should scan struct methods
 		if ti.File != nil && ti.Name != "" && shouldScanStructMethods(ctx) {
-			ti.parseMethods(ti.File, ti.Name)
+			ti.parseMethods(ti.File, ti.Name, ctx)
 		}
 		// Clear the structType reference as it's no longer needed
 		ti.structType = nil
@@ -463,6 +513,12 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 								if len(param.Names) > 0 {
 									for _, paramName := range param.Names {
 										paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+										// Track parameter usage
+										if paramTypedElem.TypeInfo != nil {
+											trackParameterUsage(paramTypedElem.TypeInfo, ti.CannonicalName+"."+methodName.Name, paramName.Name)
+										}
+
 										pi := ParameterInfo{
 											TypedElement: paramTypedElem,
 										}
@@ -471,6 +527,12 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 								} else {
 									// unnamed parameter
 									paramTypedElem := parseTypedElement(param.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+									// Track parameter usage
+									if paramTypedElem.TypeInfo != nil {
+										trackParameterUsage(paramTypedElem.TypeInfo, ti.CannonicalName+"."+methodName.Name, "")
+									}
+
 									pi := ParameterInfo{
 										TypedElement: paramTypedElem,
 									}
@@ -485,6 +547,12 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 								if len(result.Names) > 0 {
 									for _, returnName := range result.Names {
 										returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+										// Track return usage
+										if returnTypedElem.TypeInfo != nil {
+											trackReturnUsage(returnTypedElem.TypeInfo, ti.CannonicalName+"."+methodName.Name, returnName.Name)
+										}
+
 										ri := ReturnInfo{
 											TypedElement: returnTypedElem,
 										}
@@ -493,6 +561,12 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 								} else {
 									// unnamed return value
 									returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+									// Track return usage
+									if returnTypedElem.TypeInfo != nil {
+										trackReturnUsage(returnTypedElem.TypeInfo, ti.CannonicalName+"."+methodName.Name, "")
+									}
+
 									ri := ReturnInfo{
 										TypedElement: returnTypedElem,
 									}
@@ -505,16 +579,40 @@ func (ti *TypeInfo) parseFields(ctx *ProcessContext) {
 					}
 				}
 			} else {
-				// Embedded interface - could be handled here if needed
-				// For now, we'll skip embedded interfaces
+				// Embedded interface - parse and inherit methods
+				embeddedType := GetOrCreateTypeInfo(ctx, method.Type, "", nil, nil, ti.File, ti.Package, nil)
+				if embeddedType != nil && embeddedType.Kind == TypeKindInterface {
+					// Track embedded usage
+					trackEmbeddedUsage(embeddedType, ti)
+
+					// Add all methods from the embedded interface
+					for _, embeddedMethod := range embeddedType.Methods {
+						// Create a copy of the embedded method to avoid reference issues
+						inheritedMethod := FunctionInfo{
+							Name:        embeddedMethod.Name,
+							File:        embeddedMethod.File,
+							Comment:     embeddedMethod.Comment,
+							Annotations: embeddedMethod.Annotations,
+							Parms:       make([]ParameterInfo, len(embeddedMethod.Parms)),
+							Returns:     make([]ReturnInfo, len(embeddedMethod.Returns)),
+							Visibility:  embeddedMethod.Visibility,
+						}
+
+						// Deep copy parameters
+						copy(inheritedMethod.Parms, embeddedMethod.Parms)
+
+						// Deep copy returns
+						copy(inheritedMethod.Returns, embeddedMethod.Returns)
+
+						ti.AddMethod(inheritedMethod)
+					}
+				}
 			}
 		}
 		// Clear the interfaceType reference as it's no longer needed
 		ti.interfaceType = nil
 	}
-}
-
-// parseTypeParams parses the type parameter constraints with proper context for caching
+} // parseTypeParams parses the type parameter constraints with proper context for caching
 func (ti *TypeInfo) parseTypeParams(ctx *ProcessContext) {
 	if ti.typeParamList != nil {
 		paramIndex := 0
@@ -613,16 +711,22 @@ func (ti *TypeInfo) parseContainerTypes(ctx *ProcessContext) {
 		ti.ElementType = GetOrCreateTypeInfo(ctx, t.Elt, "", nil, nil, ti.File, ti.Package, nil)
 		if ti.ElementType != nil {
 			ti.ElementTypeRef = ti.ElementType.CannonicalName
+			// Track container element usage
+			trackFieldUsage(ti.ElementType, ti, "element")
 		}
 	case *ast.MapType:
 		// Parse key and value types for map
 		ti.KeyType = GetOrCreateTypeInfo(ctx, t.Key, "", nil, nil, ti.File, ti.Package, nil)
 		if ti.KeyType != nil {
 			ti.KeyTypeRef = ti.KeyType.CannonicalName
+			// Track map key usage
+			trackFieldUsage(ti.KeyType, ti, "key")
 		}
 		ti.ElementType = GetOrCreateTypeInfo(ctx, t.Value, "", nil, nil, ti.File, ti.Package, nil)
 		if ti.ElementType != nil {
 			ti.ElementTypeRef = ti.ElementType.CannonicalName
+			// Track map value usage
+			trackFieldUsage(ti.ElementType, ti, "value")
 		}
 	}
 }
@@ -652,6 +756,12 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 					// named parameters
 					for _, paramName := range param.Names {
 						paramTypedElem := parseTypedElement(param.Type, paramName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+						// Track usage for function type parameter types
+						if paramTypedElem.TypeInfo != nil {
+							trackParameterUsage(paramTypedElem.TypeInfo, ti.CannonicalName, paramName.Name)
+						}
+
 						pi := ParameterInfo{
 							TypedElement: paramTypedElem,
 						}
@@ -660,6 +770,12 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 				} else {
 					// unnamed parameter
 					paramTypedElem := parseTypedElement(param.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+					// Track usage for function type parameter types
+					if paramTypedElem.TypeInfo != nil {
+						trackParameterUsage(paramTypedElem.TypeInfo, ti.CannonicalName, "")
+					}
+
 					pi := ParameterInfo{
 						TypedElement: paramTypedElem,
 					}
@@ -675,6 +791,12 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 					// named return values
 					for _, returnName := range result.Names {
 						returnTypedElem := parseTypedElement(result.Type, returnName.Name, nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+						// Track usage for function type return types
+						if returnTypedElem.TypeInfo != nil {
+							trackReturnUsage(returnTypedElem.TypeInfo, ti.CannonicalName, returnName.Name)
+						}
+
 						ri := ReturnInfo{
 							TypedElement: returnTypedElem,
 						}
@@ -683,6 +805,12 @@ func (ti *TypeInfo) parseFunctionSignature(ctx *ProcessContext) {
 				} else {
 					// unnamed return value
 					returnTypedElem := parseTypedElement(result.Type, "", nil, ti.GenDecl, ti.File, ti.Package, ctx)
+
+					// Track usage for function type return types
+					if returnTypedElem.TypeInfo != nil {
+						trackReturnUsage(returnTypedElem.TypeInfo, ti.CannonicalName, "")
+					}
+
 					ri := ReturnInfo{
 						TypedElement: returnTypedElem,
 					}
@@ -773,4 +901,91 @@ func shouldScanStructMethods(ctx *ProcessContext) bool {
 
 	scanOptions := &ctx.Config.Scanning.ScanOptions
 	return scanOptions.StructMethods != config.ScanModeNone && scanOptions.StructMethods != config.ScanModeDisabled
+}
+
+// Usage tracking helper functions
+
+// trackEmbeddedUsage records when a type is used as embedded in another type
+func trackEmbeddedUsage(embeddedType *TypeInfo, parentType *TypeInfo) {
+	if embeddedType == nil || parentType == nil || embeddedType.UsageInfo == nil {
+		return
+	}
+
+	// Add to embedded usage
+	refInfo := ReferenceInfo{
+		RefType: parentType.CannonicalName,
+		Name:    "", // Embedded fields don't have explicit names
+		Kind:    ReferenceKindEmbedded,
+	}
+	embeddedType.UsageInfo.EmbeddedIn = append(embeddedType.UsageInfo.EmbeddedIn, refInfo)
+
+	// Update IsOnlyEmbedded flag
+	UpdateUsageFlags(embeddedType)
+}
+
+// trackFieldUsage records when a type is used as a field in another type
+func trackFieldUsage(fieldType *TypeInfo, parentType *TypeInfo, fieldName string) {
+	if fieldType == nil || parentType == nil || fieldType.UsageInfo == nil {
+		return
+	}
+
+	// Add to reference usage
+	refInfo := ReferenceInfo{
+		RefType: parentType.CannonicalName,
+		Name:    fieldName,
+		Kind:    ReferenceKindField,
+	}
+	fieldType.UsageInfo.ReferencedIn = append(fieldType.UsageInfo.ReferencedIn, refInfo)
+
+	// Update IsOnlyEmbedded flag
+	UpdateUsageFlags(fieldType)
+}
+
+// trackParameterUsage records when a type is used as a function parameter
+func trackParameterUsage(paramType *TypeInfo, functionType string, paramName string) {
+	if paramType == nil || paramType.UsageInfo == nil {
+		return
+	}
+
+	// Add to reference usage
+	refInfo := ReferenceInfo{
+		RefType: functionType,
+		Name:    paramName,
+		Kind:    ReferenceKindParameter,
+	}
+	paramType.UsageInfo.ReferencedIn = append(paramType.UsageInfo.ReferencedIn, refInfo)
+
+	// Update IsOnlyEmbedded flag
+	UpdateUsageFlags(paramType)
+}
+
+// trackReturnUsage records when a type is used as a function return type
+func trackReturnUsage(returnType *TypeInfo, functionType string, returnName string) {
+	if returnType == nil || returnType.UsageInfo == nil {
+		return
+	}
+
+	// Add to reference usage
+	refInfo := ReferenceInfo{
+		RefType: functionType,
+		Name:    returnName,
+		Kind:    ReferenceKindReturn,
+	}
+	returnType.UsageInfo.ReferencedIn = append(returnType.UsageInfo.ReferencedIn, refInfo)
+
+	// Update IsOnlyEmbedded flag
+	UpdateUsageFlags(returnType)
+}
+
+// UpdateUsageFlags calculates the IsOnlyEmbedded flag based on current usage
+func UpdateUsageFlags(typeInfo *TypeInfo) {
+	if typeInfo == nil || typeInfo.UsageInfo == nil {
+		return
+	}
+
+	// IsOnlyEmbedded is true when:
+	// 1. Type is used as embedded (has EmbeddedIn entries)
+	// 2. Type is NOT used directly (no ReferencedIn entries)
+	typeInfo.UsageInfo.IsOnlyEmbedded = len(typeInfo.UsageInfo.EmbeddedIn) > 0 &&
+		len(typeInfo.UsageInfo.ReferencedIn) == 0
 }
