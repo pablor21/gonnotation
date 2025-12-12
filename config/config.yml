@@ -1,11 +1,22 @@
 scanning:
   packages:
     - ./**/*.go
+  # Options for scanning internal packages
   scan_options:
     structs: "all"
     enums: "all"
     interfaces: "all"
     functions: "all"
     struct_methods: "all"
+
+  # Options for scanning external packages
+  external_scan:
+    enabled: true
+    mode: "referenced" # "all" or "referenced"
+    max_depth: -1 # -1 means no limit
+    include_patterns:
+      - "*"
+    exclude_patterns: []
+
 logging:
   log_level: "info"

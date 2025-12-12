@@ -35,8 +35,9 @@ const (
 // )
 
 type ScanningConfig struct {
-	Packages    []string    `json:"packages" yaml:"packages"`
-	ScanOptions ScanOptions `json:"scan_options" yaml:"scan_options"`
+	Packages        []string           `json:"packages" yaml:"packages"`
+	ScanOptions     ScanOptions        `json:"scan_options" yaml:"scan_options"`
+	ExternalOptions ExternalScanConfig `json:"external_options" yaml:"external_options"`
 	// OutOfScopeAction OutOfScopeAction `json:"out_of_scope_action" yaml:"out_of_scope_action"`
 }
 
@@ -46,6 +47,14 @@ type ScanOptions struct {
 	Interfaces    ScanMode `json:"interfaces" yaml:"interfaces"`
 	Functions     ScanMode `json:"functions" yaml:"functions"`
 	Enums         ScanMode `json:"enums" yaml:"enums"`
+}
+
+type ExternalScanConfig struct {
+	Enabled         bool     `json:"enabled" yaml:"enabled"`
+	Mode            ScanMode `json:"mode" yaml:"mode"`
+	MaxDepth        int      `json:"max_depth" yaml:"max_depth"`
+	IncludePatterns []string `json:"include_patterns" yaml:"include_patterns"`
+	ExcludePatterns []string `json:"exclude_patterns" yaml:"exclude_patterns"`
 }
 
 func NewDefaultConfig() *Config {
