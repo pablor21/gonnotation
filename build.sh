@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Build script for gqlschemagen with automatic version injection
 #
 # This script builds the gqlschemagen binary with version information
