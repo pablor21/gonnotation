@@ -1,4 +1,4 @@
-package annotations
+package gonnotation
 
 import (
 	"strconv"
@@ -9,6 +9,7 @@ import (
 // It first checks for the exact parameter name, then checks aliases.
 // Returns the value and true if found, empty string and false otherwise.
 func (a *Annotation) GetParamValue(name string, aliases ...string) (string, bool) {
+
 	// Check exact name first
 	if val, ok := a.Params[name]; ok {
 		return val, true
@@ -227,6 +228,23 @@ func (tags StructTags) GetTagIntOrDefault(name string, def int, aliases ...strin
 	return def
 }
 
+func (tags StructTags) GetTagFloat(name string, aliases ...string) (float64, bool) {
+	if raw, ok := tags.GetTagValue(name, aliases...); ok {
+		fv, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+		if err == nil {
+			return fv, true
+		}
+	}
+	return 0, false
+}
+
+func (tags StructTags) GetTagFloatOrDefault(name string, def float64, aliases ...string) float64 {
+	if v, ok := tags.GetTagFloat(name, aliases...); ok {
+		return v
+	}
+	return def
+}
+
 func (tags StructTags) GetTagStringList(name string, aliases ...string) ([]string, bool) {
 	if raw, ok := tags.GetTagValue(name, aliases...); ok && strings.TrimSpace(raw) != "" {
 		sepReplacer := strings.NewReplacer(";", ",")
@@ -249,27 +267,4 @@ func (tags StructTags) GetTagStringListOrDefault(name string, def []string, alia
 		return v
 	}
 	return def
-}
-
-// IsIgnored checks if the struct tag indicates the field should be ignored.
-// Common ignore values: "-", "ignore", "skip"
-// Also handles comma-separated values like: openapi:"description:\"text\",ignore"
-func (tags StructTags) IsIgnored(name string) bool {
-	if val, ok := tags[name]; ok {
-		// Direct match for simple ignore values
-		if val == "-" || val == "ignore" || val == "skip" {
-			return true
-		}
-
-		// Check if ignore/skip appears as a flag in comma-separated values
-		// e.g., openapi:"description:\"...\",ignore" or openapi:"required,ignore"
-		parts := strings.Split(val, ",")
-		for _, part := range parts {
-			trimmed := strings.TrimSpace(part)
-			if trimmed == "ignore" || trimmed == "skip" {
-				return true
-			}
-		}
-	}
-	return false
 }

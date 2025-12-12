@@ -1,43 +1,62 @@
-package annotations
+package gonnotation
 
 import (
-	"go/ast"
 	"strings"
 )
 
 // StructTags represents parsed struct tags
 type StructTags map[string]string
 
-// ParseAnnotations extracts annotations from comment groups
-func ParseAnnotations(comments []*ast.CommentGroup) []Annotation {
+// // ParseAstAnnotations extracts annotations from comment groups
+// func ParseAstAnnotations(comments []*ast.CommentGroup) []Annotation {
+// 	var annotations []Annotation
+
+// 	for _, cg := range comments {
+// 		if cg == nil {
+// 			continue
+// 		}
+// 		for _, c := range cg.List {
+// 			if c == nil {
+// 				continue
+// 			}
+
+// 			text := strings.TrimSpace(c.Text)
+// 			text = strings.TrimPrefix(text, "//")
+// 			text = strings.TrimPrefix(text, "/*")
+// 			text = strings.TrimSuffix(text, "*/")
+// 			text = strings.TrimSpace(text)
+
+// 			for _, line := range strings.Split(text, "\n") {
+// 				line = strings.TrimSpace(line)
+// 				line = strings.TrimPrefix(line, "*")
+// 				line = strings.TrimSpace(line)
+
+// 				if strings.HasPrefix(line, "@") {
+// 					ann := parseAnnotation(line)
+// 					if ann.Name != "" {
+// 						annotations = append(annotations, ann)
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return annotations
+// }
+
+func ParseAnnotationsFromText(text string) []Annotation {
+	if text == "" {
+		return nil
+	}
+
 	var annotations []Annotation
 
-	for _, cg := range comments {
-		if cg == nil {
-			continue
-		}
-		for _, c := range cg.List {
-			if c == nil {
-				continue
-			}
-
-			text := strings.TrimSpace(c.Text)
-			text = strings.TrimPrefix(text, "//")
-			text = strings.TrimPrefix(text, "/*")
-			text = strings.TrimSuffix(text, "*/")
-			text = strings.TrimSpace(text)
-
-			for _, line := range strings.Split(text, "\n") {
-				line = strings.TrimSpace(line)
-				line = strings.TrimPrefix(line, "*")
-				line = strings.TrimSpace(line)
-
-				if strings.HasPrefix(line, "@") {
-					ann := parseAnnotation(line)
-					if ann.Name != "" {
-						annotations = append(annotations, ann)
-					}
-				}
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "@") {
+			ann := parseAnnotation(line)
+			if ann.Name != "" {
+				annotations = append(annotations, ann)
 			}
 		}
 	}
@@ -273,81 +292,4 @@ func isBooleanFlag(s string) bool {
 		}
 	}
 	return true
-}
-
-// ExtractFileLevelNamespace extracts the @namespace annotation from file-level comments
-// (comments that appear right after the package declaration)
-func ExtractFileLevelNamespace(file *ast.File) string {
-	if file == nil || file.Doc == nil {
-		return ""
-	}
-
-	// Parse annotations from the package comment group
-	annotations := ParseAnnotations([]*ast.CommentGroup{file.Doc})
-
-	for _, ann := range annotations {
-		if strings.ToLower(ann.Name) == "namespace" {
-			// Check if it's @namespace("value") or @namespace(value="...")
-			if len(ann.Params) == 0 && ann.RawText != "" {
-				// Extract value from @namespace("value") format
-				text := strings.TrimSpace(ann.RawText)
-				text = strings.TrimPrefix(text, "@")
-				if strings.HasPrefix(text, "namespace(") && strings.HasSuffix(text, ")") {
-					val := strings.TrimPrefix(text, "namespace(")
-					val = strings.TrimSuffix(val, ")")
-					val = strings.Trim(val, "\"'")
-					return strings.TrimSpace(val)
-				}
-			}
-			// Check params (e.g., @namespace(value="auth"))
-			if val, exists := ann.Params["value"]; exists {
-				return val
-			}
-			// Check if the first param is the namespace (e.g., @namespace(auth))
-			for _, val := range ann.Params {
-				return val
-			}
-		}
-	}
-
-	return ""
-}
-
-// ExtractTypeNamespace extracts the @namespace annotation from type-level annotations
-// Returns namespace value or empty string if not found
-func ExtractTypeNamespace(annotations []Annotation) string {
-	for _, ann := range annotations {
-		if strings.ToLower(ann.Name) == "namespace" {
-			// Check if it's @namespace("value") format
-			if len(ann.Params) == 0 && ann.RawText != "" {
-				text := strings.TrimSpace(ann.RawText)
-				text = strings.TrimPrefix(text, "@")
-				if strings.HasPrefix(text, "namespace(") && strings.HasSuffix(text, ")") {
-					val := strings.TrimPrefix(text, "namespace(")
-					val = strings.TrimSuffix(val, ")")
-					val = strings.Trim(val, "\"'")
-					return strings.TrimSpace(val)
-				}
-			}
-			// Check params
-			if val, exists := ann.Params["value"]; exists {
-				return val
-			}
-			if val, exists := ann.Params["namespace"]; exists {
-				return val
-			}
-			// Return first param value if exists
-			for _, val := range ann.Params {
-				return val
-			}
-		}
-
-		// Also check for namespace parameter in other annotations
-		// e.g., @gqlType(namespace="auth")
-		if val, exists := ann.Params["namespace"]; exists {
-			return val
-		}
-	}
-
-	return ""
 }

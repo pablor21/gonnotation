@@ -1,4 +1,4 @@
-package annotations
+package gonnotation
 
 import "strings"
 
