@@ -1,0 +1,11 @@
+scanning:
+  packages:
+    - ./**/*.go
+  scan_options:
+    structs: "all"
+    enums: "all"
+    interfaces: "all"
+    functions: "all"
+    struct_methods: "all"
+logging:
+  log_level: "info"

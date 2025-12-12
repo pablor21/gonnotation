@@ -40,32 +40,6 @@ func (d PluginDefinitions) GetStructTagSpecByName(name string) *TagParam {
 	return nil
 }
 
-// GetCoreAnnotations returns the core annotations that are available across all format generators
-func GetCoreAnnotations() []AnnotationSpec {
-	return []AnnotationSpec{
-		{
-			Name:        "scan",
-			Description: "Marks a function call to be included in route/endpoint discovery. The called function will be scanned for route registrations if it has @AutoDiscoverEndpoints or auto-discovery is globally enabled.",
-			ValidOn:     []AnnotationValidOn{AnnotationValidOnFunction},
-			Aliases:     []string{"include"},
-			Params: []AnnotationParam{
-				{
-					Name:        "value",
-					Description: "Optional value or reference",
-					IsDefault:   true,
-					Types:       []string{"string"},
-				},
-			},
-		},
-		{
-			Name:        "skip",
-			Description: "Skip this element from being processed or included in schema generation",
-			ValidOn:     []AnnotationValidOn{AnnotationValidOnAll},
-			Aliases:     []string{"ignore"},
-		},
-	}
-}
-
 // NormalizeAnnotationName normalizes annotation names for comparison (case-insensitive)
 func NormalizeAnnotationName(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))

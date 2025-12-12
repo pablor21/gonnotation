@@ -1,4 +1,4 @@
-package parser
+package logger
 
 import (
 	"context"
@@ -8,6 +8,17 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+)
+
+// LogLevel defines the logging verbosity
+type LogLevel string
+
+const (
+	LogLevelDebug LogLevel = "debug"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelWarn  LogLevel = "warn"
+	LogLevelError LogLevel = "error"
+	LogLevelNone  LogLevel = "none"
 )
 
 var (
@@ -92,25 +103,25 @@ func SetupLogger(level LogLevel) {
 	log.SetFlags(0)
 }
 
-// GetEffectiveLogLevel determines the effective log level with format generator override
-func GetEffectiveLogLevel(coreConfig *CoreConfig, pluginConfig any) LogLevel {
-	// Start with core config
-	logLevel := DerefPtr(coreConfig.LogLevel, LogLevelInfo)
-	if logLevel == "" {
-		logLevel = LogLevelInfo
-	}
+// // GetEffectiveLogLevel determines the effective log level with format generator override
+// func GetEffectiveLogLevel(config *Config, pluginConfig any) LogLevel {
+// 	// Start with core config
+// 	logLevel := utils.DerefPtr(config.LogLevel, LogLevelInfo)
+// 	if logLevel == "" {
+// 		logLevel = LogLevelInfo
+// 	}
 
-	// Check for format generator-level override
-	if configMap, ok := pluginConfig.(map[string]any); ok {
-		if pluginLevel, exists := configMap["log_level"]; exists {
-			if levelStr, ok := pluginLevel.(string); ok {
-				logLevel = LogLevel(levelStr)
-			}
-		}
-	}
+// 	// Check for format generator-level override
+// 	if configMap, ok := pluginConfig.(map[string]any); ok {
+// 		if pluginLevel, exists := configMap["log_level"]; exists {
+// 			if levelStr, ok := pluginLevel.(string); ok {
+// 				logLevel = LogLevel(levelStr)
+// 			}
+// 		}
+// 	}
 
-	return logLevel
-}
+// 	return logLevel
+// }
 
 // SetLogTag sets the current log tag for all subsequent logs
 func SetLogTag(tag string) {

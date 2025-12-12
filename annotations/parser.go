@@ -13,7 +13,14 @@ func ParseAnnotations(comments []*ast.CommentGroup) []Annotation {
 	var annotations []Annotation
 
 	for _, cg := range comments {
+		if cg == nil {
+			continue
+		}
 		for _, c := range cg.List {
+			if c == nil {
+				continue
+			}
+
 			text := strings.TrimSpace(c.Text)
 			text = strings.TrimPrefix(text, "//")
 			text = strings.TrimPrefix(text, "/*")
