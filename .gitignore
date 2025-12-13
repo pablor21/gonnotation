@@ -1,3 +1,11 @@
+// ignore all files that have no extension
+*
+!*/
+!*.* 
+!Makefile
+!LICENSE
+
+
 .DS_Store
 Thumbs.db
 .vscode
